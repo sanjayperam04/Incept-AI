@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Project Planner API Test</h1>
+    <button onclick="testAPI()">Test Generate Plan</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const messages = [
+                { role: 'assistant', content: 'Hi! Tell me about your project.' },
+                { role: 'user', content: 'Build a portfolio website in 2 weeks with homepage, gallery, and contact form' }
+            ];
+
+            try {
+                const response = await fetch('http://localhost:8000/api/generate-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages })
+                });
+
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                console.log('Success!', data);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
