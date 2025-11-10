@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import ChatInterface from './ChatInterface'
 import PlanPreview from './PlanPreview'
-import ReportModal from './ReportModal'
 import { BarChart3, ArrowLeft } from 'lucide-react'
 
-export default function PlannerApp({ onBack }) {
+export default function PlannerApp({ onBack, onShowTimeline }) {
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('inceptai_messages')
     return saved ? JSON.parse(saved) : [
@@ -16,7 +15,6 @@ export default function PlannerApp({ onBack }) {
     return saved ? JSON.parse(saved) : null
   })
   const [showPreview, setShowPreview] = useState(false)
-  const [showModal, setShowModal] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
@@ -188,7 +186,9 @@ export default function PlannerApp({ onBack }) {
   }
 
   const handleGenerateTimeline = () => {
-    setShowModal(true)
+    if (projectPlan) {
+      onShowTimeline(projectPlan)
+    }
   }
 
   const handleEditPlan = (updatedPlan) => {
@@ -199,20 +199,13 @@ export default function PlannerApp({ onBack }) {
     }])
   }
 
-  const handleCloseModal = () => {
-    setShowModal(false)
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: 'Need any changes? Just describe what you\'d like to adjust, or start a new project.' 
-    }])
-  }
+
 
   const handleNewProject = () => {
     if (confirm('Start a new project? Current progress will be cleared.')) {
       setMessages([{ role: 'assistant', content: 'Describe your project — goals, timeline, and what needs to be done.' }])
       setProjectPlan(null)
       setShowPreview(false)
-      setShowModal(false)
       localStorage.removeItem('inceptai_messages')
       localStorage.removeItem('inceptai_project_plan')
     }
@@ -295,12 +288,6 @@ export default function PlannerApp({ onBack }) {
         </div>
       </main>
 
-      {showModal && projectPlan && (
-        <ReportModal 
-          plan={projectPlan}
-          onClose={handleCloseModal}
-        />
-      )}
     </div>
   )
 }

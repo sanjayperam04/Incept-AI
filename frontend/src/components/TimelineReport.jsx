@@ -1,0 +1,449 @@
+import { ArrowLeft, Download, Printer, Calendar, User, Clock, BarChart3 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import jsPDF from 'jspdf'
+
+export default function TimelineReport({ plan, onBack }) {
+  if (!plan || !plan.tasks) {
+    return null
+  }
+
+  const chartData = plan.tasks.map(task => ({
+    name: task.name,
+    fullName: task.name,
+    start: task.start_day,
+    duration: task.duration,
+    end: task.start_day + task.duration
+  }))
+
+  const handleDownloadPDF = async () => {
+    try {
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 20
+      const contentWidth = pageWidth - (margin * 2)
+      let yPos = margin
+
+      const checkNewPage = (requiredSpace) => {
+        if (yPos + requiredSpace > pageHeight - margin) {
+          pdf.addPage()
+          yPos = margin
+          pdf.setFontSize(8)
+          pdf.setTextColor(150, 150, 150)
+          pdf.text(`Page ${pdf.internal.getNumberOfPages()}`, pageWidth / 2, pageHeight - 10, { align: 'center' })
+          pdf.setTextColor(0, 0, 0)
+          return true
+        }
+        return false
+      }
+
+      // Header
+      pdf.setFillColor(0, 0, 0)
+      pdf.rect(0, 0, pageWidth, 50, 'F')
+      
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFontSize(28)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('PROJECT TIMELINE REPORT', margin, 25)
+      
+      pdf.setFontSize(11)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text('AI-Generated Project Plan', margin, 38)
+      
+      yPos = 60
+
+      // Project Overview
+      pdf.setTextColor(0, 0, 0)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('PROJECT OVERVIEW', margin, yPos)
+      yPos += 10
+
+      pdf.setFillColor(250, 250, 250)
+      pdf.roundedRect(margin, yPos, contentWidth, 35, 2, 2, 'F')
+      pdf.setDrawColor(220, 220, 220)
+      pdf.roundedRect(margin, yPos, contentWidth, 35, 2, 2, 'S')
+      
+      pdf.setFontSize(11)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Project Name:', margin + 5, yPos + 8)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(plan.project_name, margin + 40, yPos + 8)
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Total Duration:', margin + 5, yPos + 16)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(`${plan.total_duration} days`, margin + 40, yPos + 16)
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Date Generated:', margin + 5, yPos + 24)
+      pdf.setFont('helvetica', 'normal')
+      const generatedDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+      pdf.text(generatedDate, margin + 40, yPos + 24)
+      
+      yPos += 45
+
+      // Task Breakdown
+      checkNewPage(40)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('TASK BREAKDOWN', margin, yPos)
+      yPos += 10
+
+      plan.tasks.forEach((task, index) => {
+        checkNewPage(35)
+        
+        pdf.setDrawColor(200, 200, 200)
+        pdf.setLineWidth(0.5)
+        pdf.rect(margin, yPos, contentWidth, 30)
+        
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(margin + 5, yPos + 8, 4, 'F')
+        pdf.setTextColor(255, 255, 255)
+        pdf.setFontSize(10)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text(task.id.toString(), margin + 3.5, yPos + 9.5)
+        
+        pdf.setTextColor(0, 0, 0)
+        pdf.setFontSize(11)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text(task.name, margin + 12, yPos + 9)
+        
+        pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(100, 100, 100)
+        
+        const detailsY = yPos + 18
+        pdf.text(`Owner: ${task.owner}`, margin + 5, detailsY)
+        pdf.text(`Start: Day ${task.start_day}`, margin + 60, detailsY)
+        pdf.text(`Duration: ${task.duration} days`, margin + 100, detailsY)
+        
+        if (task.dependencies && task.dependencies.length > 0) {
+          pdf.text(`Dependencies: Task ${task.dependencies.join(', ')}`, margin + 5, detailsY + 6)
+        }
+        
+        yPos += 35
+      })
+
+      // Footer
+      const totalPages = pdf.internal.getNumberOfPages()
+      const footerY = pageHeight - 12
+      
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i)
+        
+        pdf.setDrawColor(220, 220, 220)
+        pdf.setLineWidth(0.5)
+        pdf.line(margin, footerY - 3, pageWidth - margin, footerY - 3)
+        
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(120, 120, 120)
+        
+        pdf.text('Generated by Incept AI Project Planner', margin, footerY)
+        
+        const centerText = plan.project_name.length > 40 
+          ? plan.project_name.substring(0, 40) + '...' 
+          : plan.project_name
+        pdf.text(centerText, pageWidth / 2, footerY, { align: 'center' })
+        
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth - margin, footerY, { align: 'right' })
+      }
+
+      const fileName = `${plan.project_name.replace(/\s+/g, '_')}_Project_Plan.pdf`
+      pdf.save(fileName)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Failed to generate PDF. Please try again.')
+    }
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 print:relative">
+        <div className="max-w-[1600px] mx-auto px-8 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onBack}
+                className="p-2.5 hover:bg-gray-100 rounded-lg transition-colors print:hidden"
+                title="Back to Planner"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{plan.project_name}</h1>
+                <p className="text-sm text-gray-500 mt-0.5">Project Timeline Dashboard</p>
+              </div>
+            </div>
+            <div className="flex gap-3 print:hidden">
+              <button 
+                onClick={handleDownloadPDF}
+                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center gap-2"
+                title="Download PDF"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+              <button 
+                onClick={handlePrint}
+                className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                title="Print Report"
+              >
+                <Printer className="w-4 h-4" />
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="max-w-[1600px] mx-auto px-8 py-8">
+        {/* Executive Summary */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-5">Executive Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-600">Total Tasks</p>
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-4xl font-bold text-gray-900">{plan.tasks.length}</p>
+              <p className="text-xs text-gray-500 mt-2">Active project tasks</p>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-600">Project Duration</p>
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <p className="text-4xl font-bold text-gray-900">{plan.total_duration}</p>
+                <p className="text-lg text-gray-500 font-medium">days</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Estimated timeline</p>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-600">Team Members</p>
+                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-4xl font-bold text-gray-900">
+                {[...new Set(plan.tasks.map(t => t.owner))].length}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">Assigned resources</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Project Timeline */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-5">
+            Project Timeline
+          </h2>
+          <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-md">
+            <ResponsiveContainer width="100%" height={Math.max(600, plan.tasks.length * 80)}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 20, right: 50, left: 10, bottom: 30 }}
+                barCategoryGap="15%"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                <XAxis 
+                  type="number" 
+                  label={{ value: 'Days', position: 'insideBottom', offset: -15, style: { fontWeight: '600', fill: '#374151', fontSize: 14 } }}
+                  stroke="#9ca3af"
+                  tick={{ fill: '#6b7280', fontSize: 13 }}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={280}
+                  stroke="#9ca3af"
+                  tick={{ fill: '#374151', fontSize: 13, fontWeight: '500' }}
+                  interval={0}
+                />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-4 rounded-xl shadow-2xl border-2 border-gray-900">
+                          <p className="font-bold text-gray-900 mb-2 text-sm">{payload[0].payload.fullName}</p>
+                          <p className="text-xs text-gray-600 mb-1">
+                            Days {payload[0].payload.start} - {payload[0].payload.end}
+                          </p>
+                          <p className="text-xs text-gray-900 font-semibold">
+                            Duration: {payload[0].payload.duration} days
+                          </p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                  cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '25px' }}
+                  iconType="rect"
+                />
+                <Bar 
+                  dataKey="start" 
+                  stackId="a" 
+                  fill="#f3f4f6" 
+                  name="Start Offset"
+                />
+                <Bar 
+                  dataKey="duration" 
+                  stackId="a" 
+                  fill="#000000" 
+                  name="Task Duration"
+                  radius={[0, 6, 6, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Task Details */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-5">
+            Detailed Task Breakdown
+          </h2>
+          <div className="space-y-4">
+            {plan.tasks.map((task) => (
+              <div
+                key={task.id}
+                className="bg-white border border-gray-200 rounded-xl p-6 break-inside-avoid shadow-md hover:shadow-lg transition-all hover:border-gray-300"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0 shadow-lg">
+                      {task.id}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-900 text-lg mb-4">{task.name}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5">Owner</p>
+                            <p className="font-semibold text-gray-900">{task.owner}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Calendar className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5">Start Day</p>
+                            <p className="font-semibold text-gray-900">Day {task.start_day}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5">Duration</p>
+                            <p className="font-semibold text-gray-900">{task.duration} days</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
+                    Task {task.id}
+                  </span>
+                </div>
+
+                {task.dependencies && task.dependencies.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-700 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+                      <span className="font-semibold text-amber-900">Dependencies:</span> <span className="text-gray-700">Task {task.dependencies.join(', Task ')}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Team Allocation */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-5">
+            Team Allocation
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[...new Set(plan.tasks.map(t => t.owner))].map(owner => {
+              const ownerTasks = plan.tasks.filter(t => t.owner === owner)
+              const totalDays = ownerTasks.reduce((sum, t) => sum + t.duration, 0)
+              return (
+                <div key={owner} className="bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      {owner.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">{owner}</h3>
+                      <p className="text-sm text-gray-600">
+                        {ownerTasks.length} task{ownerTasks.length !== 1 ? 's' : ''} • {totalDays} days total
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="text-sm text-gray-700 space-y-2 bg-gray-50 rounded-lg p-4">
+                    {ownerTasks.map(t => (
+                      <li key={t.id} className="flex items-start">
+                        <span className="text-gray-400 mr-2 mt-0.5">•</span>
+                        <span className="flex-1">{t.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-300 text-center text-sm text-gray-500">
+          <p className="font-medium">Generated by Incept AI Project Planner</p>
+          <p className="mt-1 text-xs">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @media print {
+          .print\\:hidden {
+            display: none !important;
+          }
+          .print\\:relative {
+            position: relative !important;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
