@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, Clock, Users, BarChart3, Trash2, Edit2, Check, RefreshCw } from 'lucide-react'
+import { Plus, Calendar, Clock, Users, BarChart3, Trash2, Edit2, Check, RefreshCw, Home } from 'lucide-react'
 import TimelineReport from './TimelineReport'
 import { getUserItem, setUserItem, clearUserData, getCurrentUserId } from '../utils/userManager'
 
-export default function ProjectDashboard({ onCreateNew, onEditProject }) {
+export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLanding }) {
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -72,6 +72,14 @@ export default function ProjectDashboard({ onCreateNew, onEditProject }) {
               <p className="text-xs text-gray-500">Project Dashboard</p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={onShowLanding}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+                title="Back to Home"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </button>
               {projects.length > 0 && (
                 <button
                   onClick={handleClearAllData}
@@ -206,6 +214,7 @@ export default function ProjectDashboard({ onCreateNew, onEditProject }) {
         <TimelineReport 
           plan={selectedProject.plan}
           onClose={handleCloseModal}
+          onGoHome={onShowLanding}
         />
       )}
     </div>

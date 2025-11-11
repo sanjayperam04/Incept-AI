@@ -32,6 +32,7 @@ function App() {
         setCurrentView('planner')
       }}
       onEditProject={handleEditProject}
+      onShowLanding={() => setCurrentView('landing')}
     />
   }
 

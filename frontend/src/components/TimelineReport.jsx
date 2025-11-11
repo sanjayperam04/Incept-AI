@@ -234,7 +234,8 @@ export default function TimelineReport({ plan, onClose }) {
       // ========================================
       // 2. PROJECT TIMELINE (GANTT CHART)
       // ========================================
-      checkNewPage(60)
+      pdf.addPage()
+      yPos = margin
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
       pdf.text('2. PROJECT TIMELINE (GANTT CHART)', margin, yPos)
@@ -303,46 +304,13 @@ export default function TimelineReport({ plan, onClose }) {
       yPos += 15
 
       // ========================================
-      // 3. MILESTONES & KEY DELIVERABLES
+      // 3. DETAILED TASK BREAKDOWN
       // ========================================
-      checkNewPage(40)
+      pdf.addPage()
+      yPos = margin
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('3. MILESTONES & KEY DELIVERABLES', margin, yPos)
-      yPos += 10
-
-      milestones.forEach((milestone, index) => {
-        checkNewPage(18)
-        
-        pdf.setFillColor(240, 248, 255)
-        pdf.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'F')
-        pdf.setDrawColor(100, 149, 237)
-        pdf.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'S')
-        
-        pdf.setFontSize(10)
-        pdf.setFont('helvetica', 'bold')
-        pdf.setTextColor(0, 0, 0)
-        pdf.text(`Milestone ${index + 1}: ${milestone.name}`, margin + 3, yPos + 6)
-        
-        pdf.setFontSize(8)
-        pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(80, 80, 80)
-        const milestoneDate = new Date(startDate)
-        milestoneDate.setDate(startDate.getDate() + milestone.start_day + milestone.duration)
-        pdf.text(`Target Date: Day ${milestone.start_day + milestone.duration} (${milestoneDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`, margin + 3, yPos + 11)
-        
-        yPos += 18
-      })
-
-      yPos += 10
-
-      // ========================================
-      // 4. DETAILED TASK BREAKDOWN
-      // ========================================
-      checkNewPage(40)
-      pdf.setFontSize(16)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text('4. DETAILED TASK BREAKDOWN', margin, yPos)
+      pdf.text('3. DETAILED TASK BREAKDOWN', margin, yPos)
       yPos += 10
 
       plan.tasks.forEach((task) => {
@@ -394,13 +362,14 @@ export default function TimelineReport({ plan, onClose }) {
       })
 
       // ========================================
-      // 5. RESOURCE ALLOCATION
+      // 4. RESOURCE ALLOCATION
       // ========================================
-      checkNewPage(40)
+      pdf.addPage()
+      yPos = margin
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      pdf.text('5. RESOURCE ALLOCATION', margin, yPos)
+      pdf.text('4. RESOURCE ALLOCATION', margin, yPos)
       yPos += 10
 
       const owners = [...new Set(plan.tasks.map(t => t.owner))]
@@ -439,13 +408,14 @@ export default function TimelineReport({ plan, onClose }) {
       yPos += 10
 
       // ========================================
-      // 6. RISK ASSESSMENT & DEPENDENCIES
+      // 5. RISK ASSESSMENT & DEPENDENCIES
       // ========================================
-      checkNewPage(40)
+      pdf.addPage()
+      yPos = margin
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      pdf.text('6. RISK ASSESSMENT & DEPENDENCIES', margin, yPos)
+      pdf.text('5. RISK ASSESSMENT & DEPENDENCIES', margin, yPos)
       yPos += 10
 
       // Critical Path
@@ -499,64 +469,6 @@ export default function TimelineReport({ plan, onClose }) {
       })
 
       yPos += 10
-
-      // ========================================
-      // 7. ASSUMPTIONS & CONSTRAINTS
-      // ========================================
-      checkNewPage(35)
-      pdf.setFontSize(16)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('7. ASSUMPTIONS & CONSTRAINTS', margin, yPos)
-      yPos += 10
-
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text('Assumptions:', margin, yPos)
-      yPos += 6
-
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(80, 80, 80)
-      
-      const assumptions = [
-        '• All team members are available full-time for the project duration',
-        '• Working days are consecutive (no weekends/holidays accounted)',
-        '• Resources have the required skills and experience',
-        '• No external blockers or dependencies outside the team',
-        '• Budget and tools are available as needed'
-      ]
-
-      assumptions.forEach(assumption => {
-        checkNewPage(6)
-        pdf.text(assumption, margin + 5, yPos)
-        yPos += 6
-      })
-
-      yPos += 8
-
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Constraints:', margin, yPos)
-      yPos += 6
-
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(80, 80, 80)
-      
-      const constraints = [
-        `• Fixed timeline: ${plan.total_duration} days`,
-        `• Team size: ${owners.length} members`,
-        '• Task dependencies must be respected',
-        '• Sequential tasks cannot be parallelized'
-      ]
-
-      constraints.forEach(constraint => {
-        checkNewPage(6)
-        pdf.text(constraint, margin + 5, yPos)
-        yPos += 6
-      })
 
       // ========================================
       // FOOTER ON ALL PAGES
