@@ -265,7 +265,7 @@ export default function TimelineReport({ plan, onBack }) {
         {/* Project Timeline */}
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Project Timeline
+            Project Timeline Gantt Chart
           </h2>
           <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
             <ResponsiveContainer width="100%" height={Math.max(450, plan.tasks.length * 60)}>
