@@ -1,8 +1,14 @@
 import { ArrowLeft, Download, Printer, Calendar, User, Clock, BarChart3 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import jsPDF from 'jspdf'
+import { useEffect } from 'react'
 
 export default function TimelineReport({ plan, onBack }) {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   if (!plan || !plan.tasks) {
     return null
   }
@@ -172,28 +178,28 @@ export default function TimelineReport({ plan, onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 print:relative">
-        <div className="max-w-[1600px] mx-auto px-8 py-5">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:relative">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={onBack}
-                className="p-2.5 hover:bg-gray-100 rounded-lg transition-colors print:hidden"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors print:hidden"
                 title="Back to Planner"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{plan.project_name}</h1>
-                <p className="text-sm text-gray-500 mt-0.5">Project Timeline Dashboard</p>
+                <h1 className="text-xl font-bold text-gray-900">{plan.project_name}</h1>
+                <p className="text-xs text-gray-500">Project Timeline Dashboard</p>
               </div>
             </div>
-            <div className="flex gap-3 print:hidden">
+            <div className="flex gap-2 print:hidden">
               <button 
                 onClick={handleDownloadPDF}
-                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
                 title="Download PDF"
               >
                 <Download className="w-4 h-4" />
@@ -201,7 +207,7 @@ export default function TimelineReport({ plan, onBack }) {
               </button>
               <button 
                 onClick={handlePrint}
-                className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2"
                 title="Print Report"
               >
                 <Printer className="w-4 h-4" />
@@ -213,75 +219,75 @@ export default function TimelineReport({ plan, onBack }) {
       </header>
 
       {/* Content */}
-      <div className="max-w-[1600px] mx-auto px-8 py-8">
+      <div className="container mx-auto px-6 py-6 max-w-6xl">
         {/* Executive Summary */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-5">Executive Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Executive Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-600">Total Tasks</p>
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-blue-600" />
                 </div>
               </div>
-              <p className="text-4xl font-bold text-gray-900">{plan.tasks.length}</p>
-              <p className="text-xs text-gray-500 mt-2">Active project tasks</p>
+              <p className="text-3xl font-bold text-gray-900">{plan.tasks.length}</p>
+              <p className="text-xs text-gray-500 mt-1">Active project tasks</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-600">Project Duration</p>
-                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-green-600" />
+            <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-600">Project Duration</p>
+                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-green-600" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-bold text-gray-900">{plan.total_duration}</p>
-                <p className="text-lg text-gray-500 font-medium">days</p>
+                <p className="text-3xl font-bold text-gray-900">{plan.total_duration}</p>
+                <p className="text-base text-gray-500 font-medium">days</p>
               </div>
-              <p className="text-xs text-gray-500 mt-2">Estimated timeline</p>
+              <p className="text-xs text-gray-500 mt-1">Estimated timeline</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-600">Team Members</p>
-                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                  <User className="w-5 h-5 text-purple-600" />
+            <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-600">Team Members</p>
+                <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <User className="w-4 h-4 text-purple-600" />
                 </div>
               </div>
-              <p className="text-4xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900">
                 {[...new Set(plan.tasks.map(t => t.owner))].length}
               </p>
-              <p className="text-xs text-gray-500 mt-2">Assigned resources</p>
+              <p className="text-xs text-gray-500 mt-1">Assigned resources</p>
             </div>
           </div>
         </div>
 
         {/* Project Timeline */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-5">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
             Project Timeline
           </h2>
-          <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-md">
-            <ResponsiveContainer width="100%" height={Math.max(600, plan.tasks.length * 80)}>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <ResponsiveContainer width="100%" height={Math.max(450, plan.tasks.length * 60)}>
               <BarChart
                 data={chartData}
                 layout="vertical"
-                margin={{ top: 20, right: 50, left: 10, bottom: 30 }}
-                barCategoryGap="15%"
+                margin={{ top: 15, right: 30, left: 5, bottom: 20 }}
+                barCategoryGap="12%"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
                 <XAxis 
                   type="number" 
-                  label={{ value: 'Days', position: 'insideBottom', offset: -15, style: { fontWeight: '600', fill: '#374151', fontSize: 14 } }}
+                  label={{ value: 'Days', position: 'insideBottom', offset: -10, style: { fontWeight: '600', fill: '#374151', fontSize: 12 } }}
                   stroke="#9ca3af"
-                  tick={{ fill: '#6b7280', fontSize: 13 }}
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
                 />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={280}
+                  width={220}
                   stroke="#9ca3af"
-                  tick={{ fill: '#374151', fontSize: 13, fontWeight: '500' }}
+                  tick={{ fill: '#374151', fontSize: 11, fontWeight: '500' }}
                   interval={0}
                 />
                 <Tooltip 
@@ -326,62 +332,62 @@ export default function TimelineReport({ plan, onBack }) {
         </div>
 
         {/* Task Details */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-5">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
             Detailed Task Breakdown
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {plan.tasks.map((task) => (
               <div
                 key={task.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 break-inside-avoid shadow-md hover:shadow-lg transition-all hover:border-gray-300"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-5 break-inside-avoid hover:shadow-md transition-all hover:border-gray-300"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0 shadow-lg">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center text-base font-bold flex-shrink-0">
                       {task.id}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg mb-4">{task.name}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
-                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <User className="w-4 h-4 text-blue-600" />
+                      <h3 className="font-bold text-gray-900 text-base mb-3">{task.name}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                          <div className="w-7 h-7 bg-blue-50 rounded flex items-center justify-center flex-shrink-0">
+                            <User className="w-3.5 h-3.5 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 mb-0.5">Owner</p>
-                            <p className="font-semibold text-gray-900">{task.owner}</p>
+                            <p className="text-xs text-gray-500">Owner</p>
+                            <p className="font-semibold text-gray-900 text-xs">{task.owner}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Calendar className="w-4 h-4 text-green-600" />
+                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                          <div className="w-7 h-7 bg-green-50 rounded flex items-center justify-center flex-shrink-0">
+                            <Calendar className="w-3.5 h-3.5 text-green-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 mb-0.5">Start Day</p>
-                            <p className="font-semibold text-gray-900">Day {task.start_day}</p>
+                            <p className="text-xs text-gray-500">Start Day</p>
+                            <p className="font-semibold text-gray-900 text-xs">Day {task.start_day}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg p-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Clock className="w-4 h-4 text-purple-600" />
+                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                          <div className="w-7 h-7 bg-purple-50 rounded flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-3.5 h-3.5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 mb-0.5">Duration</p>
-                            <p className="font-semibold text-gray-900">{task.duration} days</p>
+                            <p className="text-xs text-gray-500">Duration</p>
+                            <p className="font-semibold text-gray-900 text-xs">{task.duration} days</p>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <span className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
+                  <span className="bg-black text-white px-2.5 py-1 rounded text-xs font-semibold">
                     Task {task.id}
                   </span>
                 </div>
 
                 {task.dependencies && task.dependencies.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-700 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
                       <span className="font-semibold text-amber-900">Dependencies:</span> <span className="text-gray-700">Task {task.dependencies.join(', Task ')}</span>
                     </p>
                   </div>
@@ -392,31 +398,31 @@ export default function TimelineReport({ plan, onBack }) {
         </div>
 
         {/* Team Allocation */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-5">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
             Team Allocation
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[...new Set(plan.tasks.map(t => t.owner))].map(owner => {
               const ownerTasks = plan.tasks.filter(t => t.owner === owner)
               const totalDays = ownerTasks.reduce((sum, t) => sum + t.duration, 0)
               return (
-                <div key={owner} className="bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                <div key={owner} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-base">
                       {owner.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{owner}</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-bold text-gray-900 text-base">{owner}</h3>
+                      <p className="text-xs text-gray-600">
                         {ownerTasks.length} task{ownerTasks.length !== 1 ? 's' : ''} • {totalDays} days total
                       </p>
                     </div>
                   </div>
-                  <ul className="text-sm text-gray-700 space-y-2 bg-gray-50 rounded-lg p-4">
+                  <ul className="text-xs text-gray-700 space-y-1.5 bg-white rounded-lg p-3 border border-gray-200">
                     {ownerTasks.map(t => (
                       <li key={t.id} className="flex items-start">
-                        <span className="text-gray-400 mr-2 mt-0.5">•</span>
+                        <span className="text-gray-400 mr-2">•</span>
                         <span className="flex-1">{t.name}</span>
                       </li>
                     ))}
@@ -428,9 +434,9 @@ export default function TimelineReport({ plan, onBack }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-gray-300 text-center text-sm text-gray-500">
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
           <p className="font-medium">Generated by Incept AI Project Planner</p>
-          <p className="mt-1 text-xs">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="mt-1">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
       </div>
 
