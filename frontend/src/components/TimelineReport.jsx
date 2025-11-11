@@ -41,83 +41,278 @@ export default function TimelineReport({ plan, onClose }) {
       const contentWidth = pageWidth - (margin * 2)
       let yPos = margin
 
+      // Calculate project dates
+      const startDate = new Date()
+      const endDate = new Date()
+      endDate.setDate(startDate.getDate() + plan.total_duration)
+
+      // Calculate critical path (tasks with dependencies)
+      const criticalTasks = plan.tasks.filter(t => 
+        t.dependencies && t.dependencies.length > 0
+      )
+
+      // Identify milestones (final tasks or tasks with no dependents)
+      const milestones = plan.tasks.filter(task => {
+        const isDependent = plan.tasks.some(t => 
+          t.dependencies && t.dependencies.includes(task.id)
+        )
+        return !isDependent
+      })
+
       const checkNewPage = (requiredSpace) => {
         if (yPos + requiredSpace > pageHeight - margin) {
           pdf.addPage()
           yPos = margin
-          pdf.setFontSize(8)
-          pdf.setTextColor(150, 150, 150)
-          pdf.text(`Page ${pdf.internal.getNumberOfPages()}`, pageWidth / 2, pageHeight - 10, { align: 'center' })
-          pdf.setTextColor(0, 0, 0)
           return true
         }
         return false
       }
 
-      // Header
+      // ========================================
+      // COVER PAGE
+      // ========================================
       pdf.setFillColor(0, 0, 0)
-      pdf.rect(0, 0, pageWidth, 50, 'F')
+      pdf.rect(0, 0, pageWidth, 80, 'F')
       
       pdf.setTextColor(255, 255, 255)
-      pdf.setFontSize(28)
+      pdf.setFontSize(36)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('PROJECT TIMELINE REPORT', margin, 25)
+      pdf.text('PROJECT TIMELINE', margin, 32)
+      pdf.text('REPORT', margin, 50)
       
-      pdf.setFontSize(11)
+      pdf.setFontSize(13)
       pdf.setFont('helvetica', 'normal')
-      pdf.text('AI-Generated Project Plan', margin, 38)
+      pdf.text('AI-Generated Project Management Plan', margin, 66)
       
-      yPos = 60
+      yPos = 95
 
-      // Project Overview
+      // Project Info Box with better styling
+      pdf.setTextColor(0, 0, 0)
+      pdf.setFillColor(248, 250, 252)
+      pdf.roundedRect(margin, yPos, contentWidth, 55, 4, 4, 'F')
+      pdf.setDrawColor(226, 232, 240)
+      pdf.setLineWidth(0.5)
+      pdf.roundedRect(margin, yPos, contentWidth, 55, 4, 4, 'S')
+      
+      // Project name with accent line
+      pdf.setFillColor(0, 0, 0)
+      pdf.rect(margin + 5, yPos + 5, 3, 12, 'F')
+      
+      pdf.setFontSize(20)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text(plan.project_name, margin + 12, yPos + 14)
+      
+      // Info grid
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(71, 85, 105)
+      
+      const generatedDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', month: 'long', day: 'numeric' 
+      })
+      
+      const leftCol = margin + 8
+      const rightCol = margin + contentWidth/2 + 5
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Report Date:', leftCol, yPos + 28)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(generatedDate, leftCol, yPos + 34)
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Project Manager:', leftCol, yPos + 44)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text('AI Project Planner', leftCol, yPos + 50)
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Start Date:', rightCol, yPos + 28)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), rightCol, yPos + 34)
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Target End Date:', rightCol, yPos + 44)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), rightCol, yPos + 50)
+      
+      yPos += 65
+
+      // ========================================
+      // 1. EXECUTIVE SUMMARY
+      // ========================================
+      checkNewPage(50)
       pdf.setTextColor(0, 0, 0)
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('PROJECT OVERVIEW', margin, yPos)
+      pdf.text('1. EXECUTIVE SUMMARY', margin, yPos)
       yPos += 10
 
-      pdf.setFillColor(250, 250, 250)
-      pdf.roundedRect(margin, yPos, contentWidth, 35, 2, 2, 'F')
-      pdf.setDrawColor(220, 220, 220)
-      pdf.roundedRect(margin, yPos, contentWidth, 35, 2, 2, 'S')
+      const summary = `This project plan outlines the execution of ${plan.project_name} over a ${plan.total_duration}-day timeline. The project encompasses ${plan.tasks.length} key tasks across ${[...new Set(plan.tasks.map(t => t.owner))].length} team members. The plan includes task dependencies, resource allocation, and milestone tracking to ensure successful project delivery on schedule.`
       
-      pdf.setFontSize(11)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text('Project Name:', margin + 5, yPos + 8)
+      pdf.setFontSize(10)
       pdf.setFont('helvetica', 'normal')
-      pdf.text(plan.project_name, margin + 40, yPos + 8)
-      
-      pdf.setFont('helvetica', 'bold')
-      pdf.text('Total Duration:', margin + 5, yPos + 16)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text(`${plan.total_duration} days`, margin + 40, yPos + 16)
-      
-      pdf.setFont('helvetica', 'bold')
-      pdf.text('Date Generated:', margin + 5, yPos + 24)
-      pdf.setFont('helvetica', 'normal')
-      const generatedDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
-      pdf.text(generatedDate, margin + 40, yPos + 24)
-      
-      yPos += 45
+      const summaryLines = pdf.splitTextToSize(summary, contentWidth)
+      pdf.text(summaryLines, margin, yPos)
+      yPos += summaryLines.length * 5 + 10
 
-      // Task Breakdown
+      // Key Metrics Grid
+      const metrics = [
+        { label: 'Total Duration', value: `${plan.total_duration} days`, icon: '📅' },
+        { label: 'Total Tasks', value: plan.tasks.length.toString(), icon: '✓' },
+        { label: 'Team Size', value: [...new Set(plan.tasks.map(t => t.owner))].length.toString(), icon: '👥' },
+        { label: 'Milestones', value: milestones.length.toString(), icon: '🎯' }
+      ]
+
+      const boxWidth = (contentWidth - 5) / 2
+      const boxHeight = 22
+
+      metrics.forEach((metric, index) => {
+        const col = index % 2
+        const row = Math.floor(index / 2)
+        const x = margin + (col * (boxWidth + 5))
+        const y = yPos + (row * (boxHeight + 5))
+
+        pdf.setFillColor(250, 250, 250)
+        pdf.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'F')
+        pdf.setDrawColor(220, 220, 220)
+        pdf.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'S')
+
+        pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(100, 100, 100)
+        pdf.text(metric.label, x + 3, y + 8)
+
+        pdf.setFontSize(20)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text(metric.value, x + 3, y + 18)
+      })
+
+      yPos += (Math.ceil(metrics.length / 2) * (boxHeight + 5)) + 15
+
+      // ========================================
+      // 2. PROJECT TIMELINE (GANTT CHART)
+      // ========================================
+      checkNewPage(60)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('2. PROJECT TIMELINE (GANTT CHART)', margin, yPos)
+      yPos += 10
+
+      const barHeight = 8
+      const maxDuration = plan.total_duration
+      const barWidth = contentWidth - 60
+      const taskNameWidth = 55
+      
+      // Timeline scale
+      pdf.setFontSize(7)
+      pdf.setTextColor(100, 100, 100)
+      pdf.text('Day 0', margin + taskNameWidth, yPos)
+      pdf.text(`Day ${Math.floor(maxDuration/2)}`, margin + taskNameWidth + barWidth/2 - 8, yPos)
+      pdf.text(`Day ${maxDuration}`, margin + taskNameWidth + barWidth - 12, yPos)
+      yPos += 5
+      
+      pdf.setTextColor(0, 0, 0)
+      
+      plan.tasks.forEach((task) => {
+        checkNewPage(barHeight + 6)
+        
+        // Task name
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'normal')
+        const taskName = task.name.length > 24 ? task.name.substring(0, 24) + '...' : task.name
+        pdf.text(`${task.id}. ${taskName}`, margin, yPos + 5.5)
+        
+        // Timeline background
+        pdf.setFillColor(245, 245, 245)
+        pdf.setDrawColor(220, 220, 220)
+        pdf.rect(margin + taskNameWidth, yPos, barWidth, barHeight, 'FD')
+        
+        // Task bar
+        const startX = margin + taskNameWidth + (task.start_day / maxDuration) * barWidth
+        const taskBarWidth = Math.max((task.duration / maxDuration) * barWidth, 2)
+        
+        // Color code: critical tasks in red, others in black
+        const isCritical = task.dependencies && task.dependencies.length > 0
+        pdf.setFillColor(isCritical ? 220 : 0, isCritical ? 53 : 0, isCritical ? 69 : 0)
+        pdf.rect(startX, yPos, taskBarWidth, barHeight, 'F')
+        
+        // Duration label
+        pdf.setFontSize(6)
+        pdf.setTextColor(255, 255, 255)
+        if (taskBarWidth > 8) {
+          pdf.text(`${task.duration}d`, startX + taskBarWidth/2 - 3, yPos + 5)
+        }
+        pdf.setTextColor(0, 0, 0)
+        
+        yPos += barHeight + 3
+      })
+
+      // Legend
+      yPos += 5
+      pdf.setFontSize(7)
+      pdf.setFillColor(0, 0, 0)
+      pdf.rect(margin, yPos, 8, 4, 'F')
+      pdf.text('Regular Task', margin + 10, yPos + 3)
+      
+      pdf.setFillColor(220, 53, 69)
+      pdf.rect(margin + 40, yPos, 8, 4, 'F')
+      pdf.text('Critical Path Task', margin + 50, yPos + 3)
+      
+      yPos += 15
+
+      // ========================================
+      // 3. MILESTONES & KEY DELIVERABLES
+      // ========================================
       checkNewPage(40)
       pdf.setFontSize(16)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('TASK BREAKDOWN', margin, yPos)
+      pdf.text('3. MILESTONES & KEY DELIVERABLES', margin, yPos)
       yPos += 10
 
-      plan.tasks.forEach((task, index) => {
-        checkNewPage(35)
+      milestones.forEach((milestone, index) => {
+        checkNewPage(18)
         
+        pdf.setFillColor(240, 248, 255)
+        pdf.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'F')
+        pdf.setDrawColor(100, 149, 237)
+        pdf.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'S')
+        
+        pdf.setFontSize(10)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text(`Milestone ${index + 1}: ${milestone.name}`, margin + 3, yPos + 6)
+        
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(80, 80, 80)
+        const milestoneDate = new Date(startDate)
+        milestoneDate.setDate(startDate.getDate() + milestone.start_day + milestone.duration)
+        pdf.text(`Target Date: Day ${milestone.start_day + milestone.duration} (${milestoneDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`, margin + 3, yPos + 11)
+        
+        yPos += 18
+      })
+
+      yPos += 10
+
+      // ========================================
+      // 4. DETAILED TASK BREAKDOWN
+      // ========================================
+      checkNewPage(40)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('4. DETAILED TASK BREAKDOWN', margin, yPos)
+      yPos += 10
+
+      plan.tasks.forEach((task) => {
+        checkNewPage(38)
+        
+        // Task box
         pdf.setDrawColor(200, 200, 200)
         pdf.setLineWidth(0.5)
-        pdf.rect(margin, yPos, contentWidth, 30)
+        pdf.rect(margin, yPos, contentWidth, 35)
         
+        // Task number circle
         pdf.setFillColor(0, 0, 0)
         pdf.circle(margin + 5, yPos + 8, 4, 'F')
         pdf.setTextColor(255, 255, 255)
@@ -125,38 +320,218 @@ export default function TimelineReport({ plan, onClose }) {
         pdf.setFont('helvetica', 'bold')
         pdf.text(task.id.toString(), margin + 3.5, yPos + 9.5)
         
+        // Task name
         pdf.setTextColor(0, 0, 0)
         pdf.setFontSize(11)
         pdf.setFont('helvetica', 'bold')
         pdf.text(task.name, margin + 12, yPos + 9)
         
+        // Task details
         pdf.setFontSize(9)
         pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(100, 100, 100)
+        pdf.setTextColor(80, 80, 80)
         
-        const detailsY = yPos + 18
-        pdf.text(`Owner: ${task.owner}`, margin + 5, detailsY)
-        pdf.text(`Start: Day ${task.start_day}`, margin + 60, detailsY)
-        pdf.text(`Duration: ${task.duration} days`, margin + 100, detailsY)
+        const taskStartDate = new Date(startDate)
+        taskStartDate.setDate(startDate.getDate() + task.start_day)
+        const taskEndDate = new Date(taskStartDate)
+        taskEndDate.setDate(taskStartDate.getDate() + task.duration)
+        
+        pdf.text(`Owner: ${task.owner}`, margin + 5, yPos + 18)
+        pdf.text(`Duration: ${task.duration} days`, margin + 5, yPos + 24)
+        pdf.text(`Start: Day ${task.start_day} (${taskStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`, margin + 5, yPos + 30)
+        
+        pdf.text(`Status: Planned`, margin + 80, yPos + 18)
+        pdf.text(`End: Day ${task.start_day + task.duration} (${taskEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`, margin + 80, yPos + 24)
         
         if (task.dependencies && task.dependencies.length > 0) {
-          pdf.text(`Dependencies: Task ${task.dependencies.join(', ')}`, margin + 5, detailsY + 6)
+          pdf.setTextColor(220, 53, 69)
+          pdf.setFont('helvetica', 'bold')
+          pdf.text(`Dependencies: Task ${task.dependencies.join(', Task ')}`, margin + 80, yPos + 30)
         }
         
-        yPos += 35
+        yPos += 38
       })
 
-      // Footer
+      // ========================================
+      // 5. RESOURCE ALLOCATION
+      // ========================================
+      checkNewPage(40)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text('5. RESOURCE ALLOCATION', margin, yPos)
+      yPos += 10
+
+      const owners = [...new Set(plan.tasks.map(t => t.owner))]
+      owners.forEach(owner => {
+        checkNewPage(28)
+        
+        const ownerTasks = plan.tasks.filter(t => t.owner === owner)
+        const totalDays = ownerTasks.reduce((sum, t) => sum + t.duration, 0)
+        const utilization = ((totalDays / plan.total_duration) * 100).toFixed(0)
+        
+        // Owner box
+        pdf.setFillColor(250, 250, 250)
+        pdf.rect(margin, yPos, contentWidth, 25, 'F')
+        pdf.setDrawColor(220, 220, 220)
+        pdf.rect(margin, yPos, contentWidth, 25, 'S')
+        
+        pdf.setFontSize(11)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text(owner, margin + 5, yPos + 7)
+        
+        pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(80, 80, 80)
+        pdf.text(`${ownerTasks.length} tasks • ${totalDays} days • ${utilization}% utilization`, margin + 5, yPos + 13)
+        
+        // Task list
+        pdf.setFontSize(8)
+        const taskList = ownerTasks.map(t => t.name).join(', ')
+        const taskLines = pdf.splitTextToSize(taskList, contentWidth - 10)
+        pdf.text(taskLines.slice(0, 2), margin + 5, yPos + 19)
+        
+        yPos += 28
+      })
+
+      yPos += 10
+
+      // ========================================
+      // 6. RISK ASSESSMENT & DEPENDENCIES
+      // ========================================
+      checkNewPage(40)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text('6. RISK ASSESSMENT & DEPENDENCIES', margin, yPos)
+      yPos += 10
+
+      // Critical Path
+      pdf.setFontSize(12)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Critical Path Tasks:', margin, yPos)
+      yPos += 7
+
+      if (criticalTasks.length > 0) {
+        pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'normal')
+        criticalTasks.forEach(task => {
+          checkNewPage(8)
+          pdf.setTextColor(220, 53, 69)
+          pdf.text(`• Task ${task.id}: ${task.name}`, margin + 5, yPos)
+          pdf.setTextColor(80, 80, 80)
+          pdf.text(`(Depends on: Task ${task.dependencies.join(', Task ')})`, margin + 10, yPos + 4)
+          yPos += 10
+        })
+      } else {
+        pdf.setFontSize(9)
+        pdf.setTextColor(80, 80, 80)
+        pdf.text('No critical dependencies identified. All tasks can run independently.', margin + 5, yPos)
+        yPos += 7
+      }
+
+      yPos += 8
+
+      // Risk Factors
+      pdf.setFontSize(12)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text('Risk Factors:', margin, yPos)
+      yPos += 7
+
+      pdf.setFontSize(9)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(80, 80, 80)
+      
+      const risks = [
+        `• ${criticalTasks.length} tasks have dependencies that could cause delays`,
+        `• Resource availability: ${owners.length} team members required`,
+        `• Timeline assumes no holidays or resource conflicts`,
+        `• External dependencies not accounted for in this plan`
+      ]
+
+      risks.forEach(risk => {
+        checkNewPage(6)
+        pdf.text(risk, margin + 5, yPos)
+        yPos += 6
+      })
+
+      yPos += 10
+
+      // ========================================
+      // 7. ASSUMPTIONS & CONSTRAINTS
+      // ========================================
+      checkNewPage(35)
+      pdf.setFontSize(16)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text('7. ASSUMPTIONS & CONSTRAINTS', margin, yPos)
+      yPos += 10
+
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Assumptions:', margin, yPos)
+      yPos += 6
+
+      pdf.setFontSize(9)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(80, 80, 80)
+      
+      const assumptions = [
+        '• All team members are available full-time for the project duration',
+        '• Working days are consecutive (no weekends/holidays accounted)',
+        '• Resources have the required skills and experience',
+        '• No external blockers or dependencies outside the team',
+        '• Budget and tools are available as needed'
+      ]
+
+      assumptions.forEach(assumption => {
+        checkNewPage(6)
+        pdf.text(assumption, margin + 5, yPos)
+        yPos += 6
+      })
+
+      yPos += 8
+
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text('Constraints:', margin, yPos)
+      yPos += 6
+
+      pdf.setFontSize(9)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(80, 80, 80)
+      
+      const constraints = [
+        `• Fixed timeline: ${plan.total_duration} days`,
+        `• Team size: ${owners.length} members`,
+        '• Task dependencies must be respected',
+        '• Sequential tasks cannot be parallelized'
+      ]
+
+      constraints.forEach(constraint => {
+        checkNewPage(6)
+        pdf.text(constraint, margin + 5, yPos)
+        yPos += 6
+      })
+
+      // ========================================
+      // FOOTER ON ALL PAGES
+      // ========================================
       const totalPages = pdf.internal.getNumberOfPages()
       const footerY = pageHeight - 12
       
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i)
         
+        // Footer separator line
         pdf.setDrawColor(220, 220, 220)
         pdf.setLineWidth(0.5)
         pdf.line(margin, footerY - 3, pageWidth - margin, footerY - 3)
         
+        // Footer text
         pdf.setFontSize(8)
         pdf.setFont('helvetica', 'normal')
         pdf.setTextColor(120, 120, 120)
@@ -171,7 +546,7 @@ export default function TimelineReport({ plan, onClose }) {
         pdf.text(`Page ${i} of ${totalPages}`, pageWidth - margin, footerY, { align: 'right' })
       }
 
-      const fileName = `${plan.project_name.replace(/\s+/g, '_')}_Project_Plan.pdf`
+      const fileName = `${plan.project_name.replace(/\s+/g, '_')}_Timeline_Report.pdf`
       pdf.save(fileName)
     } catch (error) {
       console.error('Error generating PDF:', error)

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 export default function ChatInterface({ messages, onSendMessage, isGenerating }) {
   const [input, setInput] = useState('')
@@ -30,7 +31,7 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
   return (
     <div className="flex flex-col h-full">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 scrollbar-custom">
         {messages.map((msg, idx) => (
           <div
             key={idx}
@@ -46,15 +47,37 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
               {msg.role === 'assistant' && (
                 <div className="text-xs font-medium text-gray-500 mb-1">Incept AI</div>
               )}
-              <p className="text-sm leading-relaxed whitespace-pre-line">{msg.content}</p>
+              <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                <ReactMarkdown
+                  components={{
+                    p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                    li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                    em: ({node, ...props}) => <em className="italic" {...props} />,
+                    code: ({node, ...props}) => <code className="bg-gray-100 px-1 rounded text-xs" {...props} />,
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         ))}
 
         {/* Example Prompts */}
         {messages.length === 1 && !isGenerating && (
-          <div className="space-y-2 animate-fade-in">
-            <p className="text-xs text-gray-500 mb-2">💡 Try these examples:</p>
+          <div className="space-y-3 animate-fade-in">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+              <p className="text-sm font-semibold text-blue-900 mb-1">👋 Welcome! Here's how it works:</p>
+              <p className="text-xs text-blue-700">
+                1. Describe your project in plain English<br/>
+                2. Your plan generates automatically<br/>
+                3. Click "View Gantt Chart" to see the timeline
+              </p>
+            </div>
+            <p className="text-xs font-medium text-gray-600 mb-2">💡 Try these examples (click to use):</p>
             {examplePrompts.map((prompt, idx) => (
               <button
                 key={idx}
@@ -79,7 +102,7 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your project: goals, timeline, tasks..."
+            placeholder="Type your project description here... (e.g., 'Build a mobile app in 4 weeks')"
             disabled={isGenerating}
             className="flex-1 px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:bg-gray-100"
           />
@@ -127,6 +150,20 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
         }
         .animate-fade-in {
           animation: fade-in 0.5s ease-out;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+          width: 8px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 4px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+          background: #555;
         }
       `}</style>
     </div>

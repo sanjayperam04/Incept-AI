@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Edit2, Check, X, BarChart3, Calendar, Clock, User } from 'lucide-react'
+import { Edit2, Check, X, BarChart3, Calendar, Clock, User, Save } from 'lucide-react'
 
-export default function PlanPreview({ plan, onEdit, onGenerateTimeline }) {
+export default function PlanPreview({ plan, onEdit, onGenerateTimeline, onSaveProject, isSaved }) {
   const [editingTask, setEditingTask] = useState(null)
   const [editedPlan, setEditedPlan] = useState(plan)
   const [showUpdateBadge, setShowUpdateBadge] = useState(false)
@@ -57,7 +57,7 @@ export default function PlanPreview({ plan, onEdit, onGenerateTimeline }) {
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-3">
+      <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-custom">
         {editedPlan.tasks.map((task) => (
           <TaskCard
             key={task.id}
@@ -70,14 +70,33 @@ export default function PlanPreview({ plan, onEdit, onGenerateTimeline }) {
         ))}
       </div>
 
-      {/* Generate Timeline Button */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      {/* Action Buttons */}
+      <div className="p-4 border-t border-gray-200 bg-white space-y-2">
+        <button
+          onClick={onSaveProject}
+          className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 group relative ${
+            isSaved 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+          title="Save this project to your dashboard for later access"
+        >
+          <Save className="w-5 h-5" />
+          {isSaved ? '✓ Saved to Dashboard' : '💾 Save to Dashboard'}
+          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            Save project for later access
+          </span>
+        </button>
         <button
           onClick={onGenerateTimeline}
-          className="w-full px-4 py-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2 hover:shadow-lg"
+          className="w-full px-4 py-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2 hover:shadow-lg group relative animate-pulse-subtle"
+          title="View Gantt chart and export as PDF"
         >
           <BarChart3 className="w-5 h-5" />
-          Generate Timeline Report
+          📊 View Gantt Chart & Export PDF
+          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            See timeline visualization and download report
+          </span>
         </button>
       </div>
       </div>
@@ -102,6 +121,31 @@ const styles = `
   }
   .animate-bounce-in {
     animation: bounce-in 0.4s ease-out;
+  }
+  @keyframes pulse-subtle {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 `
 
@@ -189,8 +233,8 @@ function TaskCard({ task, isEditing, onEdit, onSave, onCancel }) {
         </div>
         <button
           onClick={onEdit}
-          className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors opacity-0 group-hover:opacity-100"
-          title="Edit task"
+          className="p-2 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors group-hover:text-gray-600"
+          title="Edit task details"
         >
           <Edit2 className="w-4 h-4" />
         </button>

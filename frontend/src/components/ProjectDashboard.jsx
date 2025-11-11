@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, Clock, Users, BarChart3, Trash2 } from 'lucide-react'
+import { Plus, Calendar, Clock, Users, BarChart3, Trash2, Edit2, Check } from 'lucide-react'
 import TimelineReport from './TimelineReport'
 
-export default function ProjectDashboard({ onCreateNew }) {
+export default function ProjectDashboard({ onCreateNew, onEditProject }) {
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -15,9 +15,17 @@ export default function ProjectDashboard({ onCreateNew }) {
     }
   }, [])
 
-  const handleProjectClick = (project) => {
+  const handleProjectClick = (project, e) => {
+    // Don't open modal if clicking edit or delete buttons
+    if (e.target.closest('button')) return
+    
     setSelectedProject(project)
     setShowModal(true)
+  }
+
+  const handleEditProject = (project, e) => {
+    e.stopPropagation()
+    onEditProject(project)
   }
 
   const handleCloseModal = () => {
@@ -32,6 +40,15 @@ export default function ProjectDashboard({ onCreateNew }) {
       setProjects(updatedProjects)
       localStorage.setItem('inceptai_all_projects', JSON.stringify(updatedProjects))
     }
+  }
+
+  const handleToggleComplete = (projectId, e) => {
+    e.stopPropagation() // Prevent opening the modal
+    const updatedProjects = projects.map(p => 
+      p.id === projectId ? { ...p, completed: !p.completed } : p
+    )
+    setProjects(updatedProjects)
+    localStorage.setItem('inceptai_all_projects', JSON.stringify(updatedProjects))
   }
 
   return (
@@ -87,20 +104,17 @@ export default function ProjectDashboard({ onCreateNew }) {
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  onClick={() => handleProjectClick(project)}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer group relative"
+                  onClick={(e) => handleProjectClick(project, e)}
+                  className={`bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer group relative ${
+                    project.completed ? 'opacity-75' : ''
+                  }`}
                 >
-                  {/* Delete Button */}
-                  <button
-                    onClick={(e) => handleDeleteProject(project.id, e)}
-                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    title="Delete Project"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-
                   {/* Project Name */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 pr-8">{project.plan.project_name}</h3>
+                  <h3 className={`text-lg font-bold mb-4 ${
+                    project.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                  }`}>
+                    {project.plan.project_name}
+                  </h3>
 
                   {/* Project Stats */}
                   <div className="space-y-2 mb-4">
@@ -118,8 +132,8 @@ export default function ProjectDashboard({ onCreateNew }) {
                     </div>
                   </div>
 
-                  {/* Created Date */}
-                  <div className="pt-4 border-t border-gray-200">
+                  {/* Created Date with Action Icons */}
+                  <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
                     <p className="text-xs text-gray-500">
                       Created {new Date(project.createdAt).toLocaleDateString('en-US', { 
                         month: 'short', 
@@ -127,6 +141,33 @@ export default function ProjectDashboard({ onCreateNew }) {
                         year: 'numeric' 
                       })}
                     </p>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => handleEditProject(project, e)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit Project"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteProject(project.id, e)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => handleToggleComplete(project.id, e)}
+                        className={`p-1.5 rounded transition-colors ${
+                          project.completed 
+                            ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                        }`}
+                        title={project.completed ? 'Mark as Incomplete' : 'Mark as Completed'}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Hover Effect */}

@@ -5,19 +5,37 @@ import ProjectDashboard from './components/ProjectDashboard'
 
 function App() {
   const [currentView, setCurrentView] = useState('landing') // 'landing', 'dashboard', 'planner'
+  const [editingProject, setEditingProject] = useState(null)
+
+  const handleEditProject = (project) => {
+    setEditingProject(project)
+    setCurrentView('planner')
+  }
+
+  const handleBackFromPlanner = () => {
+    setEditingProject(null)
+    setCurrentView('dashboard')
+  }
 
   if (currentView === 'planner') {
     return <PlannerApp 
-      onBack={() => setCurrentView('dashboard')} 
-      onShowDashboard={() => setCurrentView('dashboard')}
+      onBack={handleBackFromPlanner} 
+      onShowDashboard={handleBackFromPlanner}
+      editingProject={editingProject}
     />
   }
 
   if (currentView === 'dashboard') {
-    return <ProjectDashboard onCreateNew={() => setCurrentView('planner')} />
+    return <ProjectDashboard 
+      onCreateNew={() => {
+        setEditingProject(null)
+        setCurrentView('planner')
+      }}
+      onEditProject={handleEditProject}
+    />
   }
 
-  return <LandingPage onGetStarted={() => setCurrentView('dashboard')} />
+  return <LandingPage onGetStarted={() => setCurrentView('planner')} />
 }
 
 export default App

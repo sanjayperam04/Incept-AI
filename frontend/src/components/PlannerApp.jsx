@@ -4,20 +4,31 @@ import PlanPreview from './PlanPreview'
 import TimelineReport from './TimelineReport'
 import { BarChart3, ArrowLeft } from 'lucide-react'
 
-export default function PlannerApp({ onBack, onShowDashboard }) {
+export default function PlannerApp({ onBack, onShowDashboard, editingProject }) {
   const [messages, setMessages] = useState(() => {
+    if (editingProject) {
+      return [
+        { role: 'assistant', content: 'Describe your project — goals, timeline, and what needs to be done.' },
+        { role: 'assistant', content: `Loaded project: **${editingProject.plan.project_name}**\n\nYou can now make changes by describing what you'd like to modify. For example:\n• "make backend development 3 days"\n• "add a testing phase"\n• "change the timeline to 2 weeks"` }
+      ]
+    }
     const saved = localStorage.getItem('inceptai_messages')
     return saved ? JSON.parse(saved) : [
       { role: 'assistant', content: 'Describe your project — goals, timeline, and what needs to be done.' }
     ]
   })
   const [projectPlan, setProjectPlan] = useState(() => {
+    if (editingProject) {
+      return editingProject.plan
+    }
     const saved = localStorage.getItem('inceptai_project_plan')
     return saved ? JSON.parse(saved) : null
   })
-  const [showPreview, setShowPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(editingProject ? true : false)
   const [showModal, setShowModal] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [currentProjectId, setCurrentProjectId] = useState(editingProject?.id || null)
+  const [isSaved, setIsSaved] = useState(editingProject ? true : false)
 
   useEffect(() => {
     localStorage.setItem('inceptai_messages', JSON.stringify(messages))
@@ -78,17 +89,10 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
       // Update plan preview immediately
       setProjectPlan(plan)
       setShowPreview(true)
-
-      // Save to all projects list
-      if (!isModification) {
-        const allProjects = JSON.parse(localStorage.getItem('inceptai_all_projects') || '[]')
-        const newProject = {
-          id: Date.now(),
-          plan: plan,
-          createdAt: new Date().toISOString()
-        }
-        allProjects.push(newProject)
-        localStorage.setItem('inceptai_all_projects', JSON.stringify(allProjects))
+      
+      // Mark as unsaved when plan changes
+      if (isModification) {
+        setIsSaved(false)
       }
       
       if (isModification && oldDuration) {
@@ -185,7 +189,7 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
       } else {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: `✅ I've created a plan for **${plan.project_name}**!\n\n📊 **Summary:**\n• Duration: ${plan.total_duration} days\n• Tasks: ${plan.tasks.length}\n• Team: ${[...new Set(plan.tasks.map(t => t.owner))].join(', ')}\n\nReview the task breakdown on the right. You can edit tasks or click "Generate Timeline Report" to see the Gantt chart.` 
+          content: `✅ I've created a plan for **${plan.project_name}**!\n\n📊 **Summary:**\n• Duration: ${plan.total_duration} days\n• Tasks: ${plan.tasks.length}\n• Team: ${[...new Set(plan.tasks.map(t => t.owner))].join(', ')}\n\n**What's next?**\n👉 Click **"📊 View Gantt Chart & Export PDF"** on the right to see your timeline visualization\n💾 Or click **"Save to Dashboard"** to access this project later\n✏️ You can also modify the plan by chatting with me (e.g., "make backend development 5 days")` 
         }])
       }
       
@@ -197,6 +201,38 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const handleSaveProject = () => {
+    if (!projectPlan) return
+
+    const allProjects = JSON.parse(localStorage.getItem('inceptai_all_projects') || '[]')
+    
+    if (currentProjectId) {
+      // Update existing project
+      const projectIndex = allProjects.findIndex(p => p.id === currentProjectId)
+      if (projectIndex !== -1) {
+        allProjects[projectIndex].plan = projectPlan
+        allProjects[projectIndex].updatedAt = new Date().toISOString()
+      }
+    } else {
+      // Create new project
+      const newProject = {
+        id: Date.now(),
+        plan: projectPlan,
+        createdAt: new Date().toISOString()
+      }
+      allProjects.push(newProject)
+      setCurrentProjectId(newProject.id)
+    }
+    
+    localStorage.setItem('inceptai_all_projects', JSON.stringify(allProjects))
+    setIsSaved(true)
+    
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: '✅ Project saved successfully! You can now view it in the Dashboard or continue making changes.' 
+    }])
   }
 
   const handleGenerateTimeline = () => {
@@ -255,6 +291,7 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
               <button
                 onClick={onShowDashboard}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-md rounded-lg transition-all flex items-center gap-2"
+                title="View all saved projects"
               >
                 <BarChart3 className="w-4 h-4" />
                 Dashboard
@@ -262,6 +299,7 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
               <button
                 onClick={handleNewProject}
                 className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 hover:shadow-lg rounded-lg transition-all"
+                title="Start a new project from scratch"
               >
                 New Project
               </button>
@@ -299,13 +337,19 @@ export default function PlannerApp({ onBack, onShowDashboard }) {
                   plan={projectPlan}
                   onEdit={handleEditPlan}
                   onGenerateTimeline={handleGenerateTimeline}
+                  onSaveProject={handleSaveProject}
+                  isSaved={isSaved}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center p-8 text-center text-gray-500">
                   <div>
                     <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <p>Your project plan will appear here</p>
-                    <p className="text-sm mt-2">Start by describing your project in the chat</p>
+                    <p className="text-lg font-semibold text-gray-700 mb-2">Your project plan will appear here</p>
+                    <p className="text-sm mt-2 mb-4">Start by describing your project in the chat 👈</p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-left max-w-sm mx-auto">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Example:</p>
+                      <p className="text-xs text-gray-600 italic">"Build a portfolio website in 2 weeks with design, frontend, backend, and deployment"</p>
+                    </div>
                   </div>
                 </div>
               )}
