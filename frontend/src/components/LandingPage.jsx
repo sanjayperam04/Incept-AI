@@ -69,9 +69,9 @@ export default function LandingPage({ onGetStarted }) {
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
                 <Zap className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Instant Planning</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Natural Language to Project Plan</h3>
               <p className="text-gray-600">
-                Describe your project in natural language and get a complete plan in seconds.
+                Converts plain English descriptions into structured project plans with tasks, dependencies, and timelines.
               </p>
             </div>
 
@@ -79,49 +79,49 @@ export default function LandingPage({ onGetStarted }) {
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Visual Timelines</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Dynamic Replanning</h3>
               <p className="text-gray-600">
-                Beautiful Gantt charts that show task dependencies and project flow.
+                Modify existing plans using natural language without recreating from scratch.
               </p>
             </div>
 
             <div className="p-8 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all hover:-translate-y-1 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-white" />
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Smart Allocation</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Real-time Visual Feedback</h3>
               <p className="text-gray-600">
-                Automatic task assignment and resource allocation based on project needs.
+                Green ring pulse and update badge showing exactly what changed in your plan.
               </p>
             </div>
 
             <div className="p-8 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all hover:-translate-y-1 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
-                <Clock className="w-6 h-6 text-white" />
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Time Tracking</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Dependency Detection</h3>
               <p className="text-gray-600">
-                Accurate duration estimates and milestone tracking for every task.
+                Automatically infers logical task dependencies like Design → Development → Testing.
               </p>
             </div>
 
             <div className="p-8 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all hover:-translate-y-1 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
-                <CheckCircle className="w-6 h-6 text-white" />
+                <Users className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Dependencies</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Smart Resource Allocation</h3>
               <p className="text-gray-600">
-                Intelligent task dependency mapping to ensure logical project flow.
+                Automatically assigns appropriate roles based on task type and project needs.
               </p>
             </div>
 
             <div className="p-8 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all hover:-translate-y-1 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
+                <Clock className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Conversational Modifications</h3>
               <p className="text-gray-600">
-                Leverages advanced AI to understand context and generate optimal plans.
+                Shows detailed change summaries with emojis indicating duration increases and decreases.
               </p>
             </div>
           </div>
