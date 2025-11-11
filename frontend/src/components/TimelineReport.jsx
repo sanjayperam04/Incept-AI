@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Printer, Calendar, User, Clock, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, User, Clock, BarChart3 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import jsPDF from 'jspdf'
 
@@ -7,13 +7,54 @@ export default function TimelineReport({ plan, onClose }) {
     return null
   }
 
-  const chartData = plan.tasks.map(task => ({
-    name: task.name,
-    fullName: task.name,
-    start: task.start_day,
-    duration: task.duration,
-    end: task.start_day + task.duration
+  // Black and white theme - all tasks use black
+  const getTaskColor = (taskId) => {
+    return '#000000'
+  }
+
+  // Calculate project dates
+  const projectStartDate = new Date()
+  const getTaskDate = (dayOffset) => {
+    const date = new Date(projectStartDate)
+    date.setDate(date.getDate() + dayOffset)
+    return date
+  }
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const formatDateShort = (date) => {
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    return `${day}/${month}`
+  }
+
+  // Generate all dates for the project timeline
+  const allDates = Array.from({ length: plan.total_duration + 1 }, (_, i) => ({
+    day: i,
+    date: getTaskDate(i),
+    label: formatDateShort(getTaskDate(i))
   }))
+
+  const chartData = plan.tasks.map(task => {
+    const startDate = getTaskDate(task.start_day)
+    const endDate = getTaskDate(task.start_day + task.duration)
+    
+    return {
+      name: task.name,
+      fullName: task.name,
+      start: task.start_day,
+      duration: task.duration,
+      end: task.start_day + task.duration,
+      startDate: formatDate(startDate),
+      endDate: formatDate(endDate),
+      id: task.id,
+      dependencies: task.dependencies || [],
+      owner: task.owner,
+      color: getTaskColor(task.id)
+    }
+  })
 
   // Calculate task duration by owner for the bar chart
   const ownerDurationData = [...new Set(plan.tasks.map(t => t.owner))].map(owner => {
@@ -554,10 +595,6 @@ export default function TimelineReport({ plan, onClose }) {
     }
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
   return (
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -574,22 +611,14 @@ export default function TimelineReport({ plan, onClose }) {
               <h1 className="text-xl font-bold text-gray-900">{plan.project_name}</h1>
               <p className="text-xs text-gray-500">Project Timeline Dashboard</p>
             </div>
-            <div className="flex gap-2 print:hidden">
+            <div className="flex gap-2">
               <button 
                 onClick={handleDownloadPDF}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2"
                 title="Download PDF"
               >
                 <Download className="w-4 h-4" />
                 Download PDF
-              </button>
-              <button 
-                onClick={handlePrint}
-                className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2"
-                title="Print Report"
-              >
-                <Printer className="w-4 h-4" />
-                Print
               </button>
               <button
                 onClick={onClose}
@@ -648,70 +677,118 @@ export default function TimelineReport({ plan, onClose }) {
 
         {/* Project Timeline Gantt Chart */}
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
             Project Timeline Gantt Chart
           </h2>
           <div className="bg-white rounded-lg p-6 border-2 border-gray-300">
-            <ResponsiveContainer width="100%" height={Math.max(450, plan.tasks.length * 60)}>
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{ top: 15, right: 30, left: 5, bottom: 20 }}
-                barCategoryGap="12%"
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffedd5" horizontal={false} />
-                <XAxis 
-                  type="number" 
-                  label={{ value: 'Days', position: 'insideBottom', offset: -10, style: { fontWeight: '600', fill: '#374151', fontSize: 12 } }}
-                  stroke="#9ca3af"
-                  tick={{ fill: '#6b7280', fontSize: 11 }}
-                />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={220}
-                  stroke="#9ca3af"
-                  tick={{ fill: '#374151', fontSize: 11, fontWeight: '500' }}
-                  interval={0}
-                />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-4 rounded-xl shadow-2xl border-2 border-gray-900">
-                          <p className="font-bold text-gray-900 mb-2 text-sm">{payload[0].payload.fullName}</p>
-                          <p className="text-xs text-gray-600 mb-1">
-                            Days {payload[0].payload.start} - {payload[0].payload.end}
-                          </p>
-                          <p className="text-xs text-gray-900 font-semibold">
-                            Duration: {payload[0].payload.duration} days
-                          </p>
+            {/* Date Range Header */}
+            <div className="mb-4 p-3 bg-gray-100 rounded-lg border border-gray-300">
+              <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-900" />
+                  <span className="font-semibold text-gray-700">Start:</span>
+                  <span className="text-gray-900">{formatDate(projectStartDate)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-900" />
+                  <span className="font-semibold text-gray-700">End:</span>
+                  <span className="text-gray-900">{formatDate(getTaskDate(plan.total_duration))}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-900" />
+                  <span className="font-semibold text-gray-700">Duration:</span>
+                  <span className="text-gray-900">{plan.total_duration} days</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Date-Based Gantt Chart */}
+            <div className="overflow-x-auto">
+              <div className="inline-block min-w-full">
+                {/* Date Header Row */}
+                <div className="flex border-b-2 border-gray-300 bg-gray-50">
+                  <div className="w-64 flex-shrink-0 p-3 font-bold text-sm text-gray-700 border-r-2 border-gray-300">
+                    Task Name
+                  </div>
+                  <div className="flex">
+                    {allDates.map((dateInfo) => (
+                      <div 
+                        key={dateInfo.day}
+                        className="flex-shrink-0 text-center border-r border-gray-200 p-2"
+                        style={{ width: '50px' }}
+                      >
+                        <div className="text-[10px] font-semibold text-gray-700">
+                          {dateInfo.label}
                         </div>
-                      )
-                    }
-                    return null
-                  }}
-                  cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }}
-                />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '25px' }}
-                  iconType="rect"
-                />
-                <Bar 
-                  dataKey="start" 
-                  stackId="a" 
-                  fill="#fed7aa" 
-                  name="Start Offset"
-                />
-                <Bar 
-                  dataKey="duration" 
-                  stackId="a" 
-                  fill="#000000" 
-                  name="Task Duration"
-                  radius={[0, 6, 6, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Task Rows */}
+                {plan.tasks.map((task, index) => {
+                    const hasDeps = task.dependencies && task.dependencies.length > 0
+                    return (
+                      <div 
+                        key={task.id}
+                        className="flex border-b border-gray-200 hover:bg-gray-50 transition-colors group relative"
+                        style={{ zIndex: 2 }}
+                      >
+                        {/* Task Name Column */}
+                        <div className="w-64 flex-shrink-0 p-3 border-r border-gray-200 flex items-center gap-2">
+                          <div 
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 bg-black"
+                          >
+                            {task.id}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{task.name}</p>
+                            <p className="text-xs text-gray-500">{task.owner}</p>
+                          </div>
+                        </div>
+
+                        {/* Timeline Grid */}
+                        <div className="flex relative" style={{ height: '60px' }}>
+                          {/* Date Cells */}
+                          {allDates.map((dateInfo) => (
+                            <div 
+                              key={dateInfo.day}
+                              className="flex-shrink-0 border-r border-gray-100"
+                              style={{ width: '50px' }}
+                            />
+                          ))}
+
+                          {/* Task Bar */}
+                          <div
+                            className="absolute top-1/2 transform -translate-y-1/2 h-8 rounded-lg shadow-md cursor-pointer transition-all group-hover:shadow-lg group-hover:scale-105 bg-black"
+                            style={{
+                              left: `${task.start_day * 50}px`,
+                              width: `${task.duration * 50}px`,
+                              minWidth: '50px'
+                            }}
+                            title={`${task.name}\n${formatDate(getTaskDate(task.start_day))} - ${formatDate(getTaskDate(task.start_day + task.duration))}\nDuration: ${task.duration} days\nOwner: ${task.owner}${hasDeps ? `\nDepends on: Task ${task.dependencies.join(', ')}` : ''}`}
+                          >
+                            <div className="flex items-center justify-center h-full px-2">
+                              <span className="text-white text-xs font-bold drop-shadow-md whitespace-nowrap">
+                                {task.duration}d
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+            
+            {/* Legend */}
+            <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-black rounded"></div>
+                <span className="text-gray-700">Task Duration</span>
+              </div>
+            </div>
           </div>
         </div>
 
