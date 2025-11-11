@@ -44,31 +44,82 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
     const newMessages = [...messages, { role: 'user', content }]
     setMessages(newMessages)
 
-    // Check if this is a modification request (dynamic replanning)
-    const isModification = projectPlan && (
-      content.toLowerCase().includes('change') ||
-      content.toLowerCase().includes('make it') ||
-      content.toLowerCase().includes('instead') ||
-      content.toLowerCase().includes('shorten') ||
-      content.toLowerCase().includes('extend') ||
-      content.toLowerCase().includes('add') ||
-      content.toLowerCase().includes('remove')
+    const lowerContent = content.toLowerCase()
+
+    // Detect specific intent from user input
+    const isRemoval = projectPlan && (
+      lowerContent.includes('remove') ||
+      lowerContent.includes('delete') ||
+      lowerContent.includes('dont need') ||
+      lowerContent.includes("don't need") ||
+      lowerContent.includes('dont require') ||
+      lowerContent.includes("don't require") ||
+      lowerContent.includes('dont want') ||
+      lowerContent.includes("don't want") ||
+      lowerContent.includes('skip') ||
+      lowerContent.includes('exclude')
+    )
+
+    const isAddition = projectPlan && !isRemoval && (
+      lowerContent.includes('add') ||
+      lowerContent.includes('include') ||
+      lowerContent.includes('insert') ||
+      (lowerContent.includes('need') && lowerContent.includes('also')) ||
+      (lowerContent.includes('want') && lowerContent.includes('also'))
+    )
+
+    const isRestructure = projectPlan && !isRemoval && !isAddition && (
+      lowerContent.includes('divide') ||
+      lowerContent.includes('split') ||
+      lowerContent.includes('break') ||
+      lowerContent.includes('tasks in total') ||
+      (lowerContent.includes('only') && lowerContent.includes('tasks')) ||
+      (lowerContent.includes('just') && lowerContent.includes('tasks'))
+    )
+
+    const isModification = projectPlan && !isRemoval && !isAddition && !isRestructure && (
+      lowerContent.includes('change') ||
+      lowerContent.includes('make') ||
+      lowerContent.includes('update') ||
+      lowerContent.includes('modify') ||
+      lowerContent.includes('instead') ||
+      lowerContent.includes('shorten') ||
+      lowerContent.includes('extend') ||
+      lowerContent.includes('reduce') ||
+      lowerContent.includes('increase') ||
+      lowerContent.includes('adjust')
     )
 
     // Auto-generate or update plan
     setIsGenerating(true)
     
-    if (isModification) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '🔄 Updating your project plan...' 
-      }])
+    // Generate contextual acknowledgment based on intent
+    let acknowledgment = ''
+    
+    if (isRemoval) {
+      acknowledgment = `**Understood.** Removing the requested items from your timeline.\n\n"${content}"\n\nRegenerating your plan...`
+    } else if (isAddition) {
+      acknowledgment = `**Acknowledged.** Adding the requested items to your project.\n\n"${content}"\n\nUpdating your timeline...`
+    } else if (isRestructure) {
+      acknowledgment = `**Confirmed.** Restructuring your project as requested.\n\n"${content}"\n\nReorganizing the tasks...`
+    } else if (isModification) {
+      acknowledgment = `**Noted.** Modifying your existing timeline.\n\n"${content}"\n\nApplying the changes...`
     } else {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Analyzing your project requirements...' 
-      }])
+      // New project creation - detect project type
+      const projectType = lowerContent.includes('website') ? 'website' :
+                         lowerContent.includes('app') || lowerContent.includes('mobile') ? 'app' :
+                         lowerContent.includes('marketing') || lowerContent.includes('campaign') ? 'marketing campaign' :
+                         lowerContent.includes('research') ? 'research project' :
+                         lowerContent.includes('event') || lowerContent.includes('conference') ? 'event' :
+                         'project'
+      
+      acknowledgment = `**Received.** Creating a comprehensive plan for your ${projectType}.\n\nAnalyzing requirements and building your timeline...`
     }
+    
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: acknowledgment
+    }])
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -99,13 +150,13 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
         // Show detailed changes
         const newTasks = plan.tasks
         
-        let changesSummary = `✅ **Your requested changes have been applied!**\n\n`
+        let changesSummary = `**Your requested changes have been applied.**\n\n`
         
         // Timeline change
         if (plan.total_duration !== oldDuration) {
           const change = plan.total_duration - oldDuration
           const changeText = change > 0 ? `extended by ${change} days` : `compressed by ${Math.abs(change)} days`
-          changesSummary += `📅 **Timeline ${changeText}:** ${oldDuration} → ${plan.total_duration} days\n\n`
+          changesSummary += `**Timeline ${changeText}:** ${oldDuration} → ${plan.total_duration} days\n\n`
         }
         
         // Task changes - improved matching algorithm
@@ -151,17 +202,17 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
         
         // Display changes
         if (changedTasks.length > 0) {
-          changesSummary += `📝 **Task Duration Updates:**\n`
+          changesSummary += `**Task Duration Updates:**\n`
           changedTasks.forEach(task => {
-            const emoji = task.change > 0 ? '⏫' : '⏬'
             const changeText = task.change > 0 ? `+${task.change}d` : `${task.change}d`
-            changesSummary += `${emoji} ${task.name}: ${task.oldDuration}d → ${task.newDuration}d (${changeText})\n`
+            const indicator = task.change > 0 ? '[INCREASED]' : '[DECREASED]'
+            changesSummary += `${indicator} ${task.name}: ${task.oldDuration}d → ${task.newDuration}d (${changeText})\n`
           })
           changesSummary += `\n`
         }
         
         if (addedTasks.length > 0) {
-          changesSummary += `✨ **Added Tasks:**\n`
+          changesSummary += `**Added Tasks:**\n`
           addedTasks.forEach(task => {
             changesSummary += `• ${task}\n`
           })
@@ -169,7 +220,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
         }
         
         if (removedTasks.length > 0) {
-          changesSummary += `🗑️ **Removed Tasks:**\n`
+          changesSummary += `**Removed Tasks:**\n`
           removedTasks.forEach(task => {
             changesSummary += `• ${task}\n`
           })
@@ -177,7 +228,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
         }
         
         if (changedTasks.length === 0 && addedTasks.length === 0 && removedTasks.length === 0) {
-          changesSummary += `📝 **Plan structure adjusted based on your request**\n\n`
+          changesSummary += `**Plan structure adjusted based on your request.**\n\n`
         }
         
         changesSummary += `View the updated timeline in the Plan Preview panel. →`
@@ -189,7 +240,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
       } else {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: `✅ I've created a plan for **${plan.project_name}**!\n\n📊 **Summary:**\n• Duration: ${plan.total_duration} days\n• Tasks: ${plan.tasks.length}\n• Team: ${[...new Set(plan.tasks.map(t => t.owner))].join(', ')}\n\n**What's next?**\n👉 Click **"📊 View Gantt Chart & Export PDF"** on the right to see your timeline visualization\n💾 Or click **"Save to Dashboard"** to access this project later\n✏️ You can also modify the plan by chatting with me (e.g., "make backend development 5 days")` 
+          content: `**Plan created for ${plan.project_name}.**\n\n**Summary:**\n• Duration: ${plan.total_duration} days\n• Tasks: ${plan.tasks.length}\n• Team: ${[...new Set(plan.tasks.map(t => t.owner))].join(', ')}\n\n**Next Steps:**\n• Click "View Gantt Chart & Export PDF" on the right to see your timeline visualization\n• Click "Save to Dashboard" to access this project later\n• You can modify the plan by chatting with me (e.g., "make backend development 5 days")` 
         }])
       }
       
@@ -231,7 +282,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
     
     setMessages(prev => [...prev, { 
       role: 'assistant', 
-      content: '✅ Project saved successfully! You can now view it in the Dashboard or continue making changes.' 
+      content: 'Project saved successfully. You can now view it in the Dashboard or continue making changes.' 
     }])
   }
 

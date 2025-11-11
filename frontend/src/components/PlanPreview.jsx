@@ -82,7 +82,7 @@ export default function PlanPreview({ plan, onEdit, onGenerateTimeline, onSavePr
           title="Save this project to your dashboard for later access"
         >
           <Save className="w-5 h-5" />
-          {isSaved ? '✓ Saved to Dashboard' : '💾 Save to Dashboard'}
+          {isSaved ? 'Saved to Dashboard' : 'Save to Dashboard'}
           <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
             Save project for later access
           </span>
@@ -93,7 +93,7 @@ export default function PlanPreview({ plan, onEdit, onGenerateTimeline, onSavePr
           title="View Gantt chart and export as PDF"
         >
           <BarChart3 className="w-5 h-5" />
-          📊 View Gantt Chart & Export PDF
+          View Gantt Chart & Export PDF
           <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
             See timeline visualization and download report
           </span>

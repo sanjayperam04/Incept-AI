@@ -70,14 +70,14 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
         {messages.length === 1 && !isGenerating && (
           <div className="space-y-3 animate-fade-in">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
-              <p className="text-sm font-semibold text-blue-900 mb-1">👋 Welcome! Here's how it works:</p>
+              <p className="text-sm font-semibold text-blue-900 mb-1">Welcome! Here's how it works:</p>
               <p className="text-xs text-blue-700">
                 1. Describe your project in plain English<br/>
                 2. Your plan generates automatically<br/>
                 3. Click "View Gantt Chart" to see the timeline
               </p>
             </div>
-            <p className="text-xs font-medium text-gray-600 mb-2">💡 Try these examples (click to use):</p>
+            <p className="text-xs font-medium text-gray-600 mb-2">Try these examples (click to use):</p>
             {examplePrompts.map((prompt, idx) => (
               <button
                 key={idx}

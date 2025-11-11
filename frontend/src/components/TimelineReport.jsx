@@ -157,10 +157,10 @@ export default function TimelineReport({ plan, onClose }) {
 
       // Key Metrics Grid
       const metrics = [
-        { label: 'Total Duration', value: `${plan.total_duration} days`, icon: '📅' },
-        { label: 'Total Tasks', value: plan.tasks.length.toString(), icon: '✓' },
-        { label: 'Team Size', value: [...new Set(plan.tasks.map(t => t.owner))].length.toString(), icon: '👥' },
-        { label: 'Milestones', value: milestones.length.toString(), icon: '🎯' }
+        { label: 'Total Duration', value: `${plan.total_duration} days` },
+        { label: 'Total Tasks', value: plan.tasks.length.toString() },
+        { label: 'Team Size', value: [...new Set(plan.tasks.map(t => t.owner))].length.toString() },
+        { label: 'Milestones', value: milestones.length.toString() }
       ]
 
       const boxWidth = (contentWidth - 5) / 2
@@ -651,7 +651,7 @@ export default function TimelineReport({ plan, onClose }) {
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Project Timeline Gantt Chart
           </h2>
-          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-lg p-6 border-2 border-gray-300">
             <ResponsiveContainer width="100%" height={Math.max(450, plan.tasks.length * 60)}>
               <BarChart
                 data={chartData}
@@ -659,7 +659,7 @@ export default function TimelineReport({ plan, onClose }) {
                 margin={{ top: 15, right: 30, left: 5, bottom: 20 }}
                 barCategoryGap="12%"
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffedd5" horizontal={false} />
                 <XAxis 
                   type="number" 
                   label={{ value: 'Days', position: 'insideBottom', offset: -10, style: { fontWeight: '600', fill: '#374151', fontSize: 12 } }}
@@ -700,7 +700,7 @@ export default function TimelineReport({ plan, onClose }) {
                 <Bar 
                   dataKey="start" 
                   stackId="a" 
-                  fill="#f3f4f6" 
+                  fill="#fed7aa" 
                   name="Start Offset"
                 />
                 <Bar 
@@ -720,13 +720,13 @@ export default function TimelineReport({ plan, onClose }) {
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Workload Distribution by Team Member
           </h2>
-          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-lg p-6 border-2 border-gray-300">
             <ResponsiveContainer width="100%" height={350}>
               <BarChart
                 data={ownerDurationData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffedd5" />
                 <XAxis 
                   dataKey="owner" 
                   angle={-45}
