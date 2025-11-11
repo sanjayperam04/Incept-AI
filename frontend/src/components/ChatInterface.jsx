@@ -5,6 +5,14 @@ import ReactMarkdown from 'react-markdown'
 export default function ChatInterface({ messages, onSendMessage, isGenerating }) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef(null)
+  
+  // Check if input has duration mentioned
+  const hasDurationInInput = (text) => {
+    return /\d+\s*(day|days|week|weeks|month|months|year|years)/i.test(text) ||
+           /in\s+\d+/i.test(text) ||
+           text.toLowerCase().includes('timeline') ||
+           text.toLowerCase().includes('duration')
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -23,9 +31,9 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
   }
 
   const examplePrompts = [
-    "Build a portfolio website in 2 weeks with design, frontend, backend, and deployment",
-    "Create an e-commerce platform in 6 weeks with product catalog, cart, payment, and admin panel",
-    "Develop a mobile app in 4 weeks with user auth, profiles, notifications, and analytics"
+    "Build a portfolio website in 2 weeks",
+    "Launch a marketing campaign in 30 days",
+    "Create a mobile app in 1 month"
   ]
 
   return (
@@ -97,32 +105,41 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
 
       {/* Input Area */}
       <div className="border-t border-gray-200 p-4 bg-white">
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your project description here... (e.g., 'Build a mobile app in 4 weeks')"
-            disabled={isGenerating}
-            className="flex-1 px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:bg-gray-100"
-          />
-          <button
-            type="submit"
-            disabled={isGenerating || !input.trim()}
-            className="px-6 py-2.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:shadow-lg"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Send
-              </>
-            )}
-          </button>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your project description here... (e.g., 'Build a mobile app in 4 weeks')"
+              disabled={isGenerating}
+              className="flex-1 px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:bg-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={isGenerating || !input.trim()}
+              className="px-6 py-2.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:shadow-lg"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Send
+                </>
+              )}
+            </button>
+          </div>
+          {/* Duration hint - only show for first message if no duration detected */}
+          {input.length > 10 && messages.length === 1 && !hasDurationInInput(input) && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg animate-slide-down">
+              <span>💡</span>
+              <span>Don't forget to mention your timeline (e.g., "in 2 weeks", "30 days")</span>
+            </div>
+          )}
         </form>
       </div>
 
@@ -145,11 +162,24 @@ export default function ChatInterface({ messages, onSendMessage, isGenerating })
             opacity: 1;
           }
         }
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .animate-slide-in {
           animation: slide-in 0.3s ease-out;
         }
         .animate-fade-in {
           animation: fade-in 0.5s ease-out;
+        }
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
         }
         .scrollbar-custom::-webkit-scrollbar {
           width: 8px;

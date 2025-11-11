@@ -3,6 +3,7 @@ import ChatInterface from './ChatInterface'
 import PlanPreview from './PlanPreview'
 import TimelineReport from './TimelineReport'
 import { BarChart3, ArrowLeft } from 'lucide-react'
+import { getUserItem, setUserItem, removeUserItem } from '../utils/userManager'
 
 export default function PlannerApp({ onBack, onShowDashboard, editingProject }) {
   const [messages, setMessages] = useState(() => {
@@ -12,16 +13,16 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
         { role: 'assistant', content: `Loaded project: **${editingProject.plan.project_name}**\n\nYou can now make changes by describing what you'd like to modify. For example:\n• "make backend development 3 days"\n• "add a testing phase"\n• "change the timeline to 2 weeks"` }
       ]
     }
-    const saved = localStorage.getItem('inceptai_messages')
+    const saved = getUserItem('messages')
     return saved ? JSON.parse(saved) : [
-      { role: 'assistant', content: 'Describe your project — goals, timeline, and what needs to be done.' }
+      { role: 'assistant', content: 'Hi! I\'m Incept AI 👋\n\nTell me what you want to build and your timeline, and I\'ll create a project plan for you.\n\n**Example:** "Build a portfolio website in 2 weeks"' }
     ]
   })
   const [projectPlan, setProjectPlan] = useState(() => {
     if (editingProject) {
       return editingProject.plan
     }
-    const saved = localStorage.getItem('inceptai_project_plan')
+    const saved = getUserItem('project_plan')
     return saved ? JSON.parse(saved) : null
   })
   const [showPreview, setShowPreview] = useState(editingProject ? true : false)
@@ -31,12 +32,12 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
   const [isSaved, setIsSaved] = useState(editingProject ? true : false)
 
   useEffect(() => {
-    localStorage.setItem('inceptai_messages', JSON.stringify(messages))
+    setUserItem('messages', JSON.stringify(messages))
   }, [messages])
 
   useEffect(() => {
     if (projectPlan) {
-      localStorage.setItem('inceptai_project_plan', JSON.stringify(projectPlan))
+      setUserItem('project_plan', JSON.stringify(projectPlan))
     }
   }, [projectPlan])
 
@@ -45,6 +46,26 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
     setMessages(newMessages)
 
     const lowerContent = content.toLowerCase()
+
+    // Check if this is a new project request (not a modification)
+    const isNewProject = !projectPlan && messages.length <= 2
+
+    // Detect if user mentioned a timeline/duration
+    const hasDuration = 
+      /\d+\s*(day|days|week|weeks|month|months|year|years)/i.test(content) ||
+      /in\s+\d+/i.test(content) ||
+      lowerContent.includes('timeline') ||
+      lowerContent.includes('duration') ||
+      lowerContent.includes('deadline')
+
+    // If it's a new project and no duration mentioned, ask for it
+    if (isNewProject && !hasDuration) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `**Got it!** You want to create: "${content}"\n\n**How much time do you have for this project?**\n\nPlease specify a timeline, for example:\n• "2 weeks"\n• "30 days"\n• "3 months"\n• "in 45 days"`
+      }])
+      return
+    }
 
     // Detect specific intent from user input
     const isRemoval = projectPlan && (
@@ -257,7 +278,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
   const handleSaveProject = () => {
     if (!projectPlan) return
 
-    const allProjects = JSON.parse(localStorage.getItem('inceptai_all_projects') || '[]')
+    const allProjects = JSON.parse(getUserItem('all_projects') || '[]')
     
     if (currentProjectId) {
       // Update existing project
@@ -277,7 +298,7 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
       setCurrentProjectId(newProject.id)
     }
     
-    localStorage.setItem('inceptai_all_projects', JSON.stringify(allProjects))
+    setUserItem('all_projects', JSON.stringify(allProjects))
     setIsSaved(true)
     
     setMessages(prev => [...prev, { 
@@ -310,8 +331,8 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
       setProjectPlan(null)
       setShowPreview(false)
       setShowModal(false)
-      localStorage.removeItem('inceptai_messages')
-      localStorage.removeItem('inceptai_project_plan')
+      removeUserItem('messages')
+      removeUserItem('project_plan')
     }
   }
 
@@ -341,11 +362,14 @@ export default function PlannerApp({ onBack, onShowDashboard, editingProject }) 
             <div className="flex gap-2">
               <button
                 onClick={onShowDashboard}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-md rounded-lg transition-all flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-md rounded-lg transition-all flex items-center gap-2 group relative"
                 title="View all saved projects"
               >
                 <BarChart3 className="w-4 h-4" />
-                Dashboard
+                My Projects
+                <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  View all your saved projects
+                </span>
               </button>
               <button
                 onClick={handleNewProject}

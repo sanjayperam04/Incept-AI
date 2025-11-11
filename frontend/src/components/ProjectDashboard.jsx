@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, Clock, Users, BarChart3, Trash2, Edit2, Check } from 'lucide-react'
+import { Plus, Calendar, Clock, Users, BarChart3, Trash2, Edit2, Check, RefreshCw } from 'lucide-react'
 import TimelineReport from './TimelineReport'
+import { getUserItem, setUserItem, clearUserData, getCurrentUserId } from '../utils/userManager'
 
 export default function ProjectDashboard({ onCreateNew, onEditProject }) {
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [showModal, setShowModal] = useState(false)
 
-  // Load all saved projects from localStorage
+  // Load all saved projects from user-specific storage
   useEffect(() => {
-    const savedProjects = localStorage.getItem('inceptai_all_projects')
+    const savedProjects = getUserItem('all_projects')
     if (savedProjects) {
       setProjects(JSON.parse(savedProjects))
     }
@@ -38,7 +39,7 @@ export default function ProjectDashboard({ onCreateNew, onEditProject }) {
     if (confirm('Are you sure you want to delete this project?')) {
       const updatedProjects = projects.filter(p => p.id !== projectId)
       setProjects(updatedProjects)
-      localStorage.setItem('inceptai_all_projects', JSON.stringify(updatedProjects))
+      setUserItem('all_projects', JSON.stringify(updatedProjects))
     }
   }
 
@@ -48,7 +49,16 @@ export default function ProjectDashboard({ onCreateNew, onEditProject }) {
       p.id === projectId ? { ...p, completed: !p.completed } : p
     )
     setProjects(updatedProjects)
-    localStorage.setItem('inceptai_all_projects', JSON.stringify(updatedProjects))
+    setUserItem('all_projects', JSON.stringify(updatedProjects))
+  }
+
+  const handleClearAllData = () => {
+    const userId = getCurrentUserId()
+    if (confirm(`Are you sure you want to clear ALL your data?\n\nThis will delete all projects and cannot be undone.\n\nYour User ID: ${userId?.substring(0, 8)}...`)) {
+      clearUserData()
+      setProjects([])
+      alert('All your data has been cleared successfully!')
+    }
   }
 
   return (
@@ -61,13 +71,25 @@ export default function ProjectDashboard({ onCreateNew, onEditProject }) {
               <h1 className="text-xl font-bold text-gray-900">Incept AI</h1>
               <p className="text-xs text-gray-500">Project Dashboard</p>
             </div>
-            <button
-              onClick={onCreateNew}
-              className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
-            >
-              <Plus className="w-4 h-4" />
-              New Project
-            </button>
+            <div className="flex gap-2">
+              {projects.length > 0 && (
+                <button
+                  onClick={handleClearAllData}
+                  className="px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-all flex items-center gap-2"
+                  title="Clear all your data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Clear All Data
+                </button>
+              )}
+              <button
+                onClick={onCreateNew}
+                className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <Plus className="w-4 h-4" />
+                New Project
+              </button>
+            </div>
           </div>
         </div>
       </header>
