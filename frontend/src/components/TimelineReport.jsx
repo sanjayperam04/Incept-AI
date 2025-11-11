@@ -1,14 +1,8 @@
 import { ArrowLeft, Download, Printer, Calendar, User, Clock, BarChart3 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import jsPDF from 'jspdf'
-import { useEffect } from 'react'
 
-export default function TimelineReport({ plan, onBack }) {
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [])
-
+export default function TimelineReport({ plan, onClose }) {
   if (!plan || !plan.tasks) {
     return null
   }
@@ -20,6 +14,18 @@ export default function TimelineReport({ plan, onBack }) {
     duration: task.duration,
     end: task.start_day + task.duration
   }))
+
+  // Calculate task duration by owner for the bar chart
+  const ownerDurationData = [...new Set(plan.tasks.map(t => t.owner))].map(owner => {
+    const ownerTasks = plan.tasks.filter(t => t.owner === owner)
+    const totalDuration = ownerTasks.reduce((sum, t) => sum + t.duration, 0)
+    const taskCount = ownerTasks.length
+    return {
+      owner,
+      duration: totalDuration,
+      taskCount
+    }
+  }).sort((a, b) => b.duration - a.duration) // Sort by duration descending
 
   const handleDownloadPDF = async () => {
     try {
@@ -178,23 +184,20 @@ export default function TimelineReport({ plan, onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:relative">
-        <div className="container mx-auto px-6 py-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 print:border-b-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors print:hidden"
-                title="Back to Planner"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{plan.project_name}</h1>
-                <p className="text-xs text-gray-500">Project Timeline Dashboard</p>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{plan.project_name}</h1>
+              <p className="text-xs text-gray-500">Project Timeline Dashboard</p>
             </div>
             <div className="flex gap-2 print:hidden">
               <button 
@@ -213,13 +216,19 @@ export default function TimelineReport({ plan, onBack }) {
                 <Printer className="w-4 h-4" />
                 Print
               </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Close"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Content */}
-      <div className="container mx-auto px-6 py-6 max-w-6xl">
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 px-6 py-6">
         {/* Executive Summary */}
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Executive Summary</h2>
@@ -262,7 +271,7 @@ export default function TimelineReport({ plan, onBack }) {
           </div>
         </div>
 
-        {/* Project Timeline */}
+        {/* Project Timeline Gantt Chart */}
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Project Timeline Gantt Chart
@@ -328,6 +337,66 @@ export default function TimelineReport({ plan, onBack }) {
                 />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Task Duration by Owner */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            Workload Distribution by Team Member
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart
+                data={ownerDurationData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="owner" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  stroke="#9ca3af"
+                  tick={{ fill: '#374151', fontSize: 11, fontWeight: '500' }}
+                />
+                <YAxis 
+                  label={{ value: 'Total Days', angle: -90, position: 'insideLeft', style: { fontWeight: '600', fill: '#374151', fontSize: 12 } }}
+                  stroke="#9ca3af"
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
+                />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-4 rounded-xl shadow-2xl border-2 border-gray-900">
+                          <p className="font-bold text-gray-900 mb-2 text-sm">{payload[0].payload.owner}</p>
+                          <p className="text-xs text-gray-600 mb-1">
+                            Total Duration: {payload[0].payload.duration} days
+                          </p>
+                          <p className="text-xs text-gray-900 font-semibold">
+                            Tasks Assigned: {payload[0].payload.taskCount}
+                          </p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                  cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                />
+                <Bar 
+                  dataKey="duration" 
+                  fill="#000000" 
+                  radius={[8, 8, 0, 0]}
+                  name="Total Days"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-600">
+                Shows total days allocated to each team member across all tasks
+              </p>
+            </div>
           </div>
         </div>
 
@@ -433,10 +502,11 @@ export default function TimelineReport({ plan, onBack }) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
-          <p className="font-medium">Generated by Incept AI Project Planner</p>
-          <p className="mt-1">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p className="font-medium">Generated by Incept AI Project Planner</p>
+            <p className="mt-1">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
         </div>
       </div>
 
@@ -444,9 +514,6 @@ export default function TimelineReport({ plan, onBack }) {
         @media print {
           .print\\:hidden {
             display: none !important;
-          }
-          .print\\:relative {
-            position: relative !important;
           }
         }
       `}</style>

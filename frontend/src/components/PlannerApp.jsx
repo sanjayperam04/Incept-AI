@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import ChatInterface from './ChatInterface'
 import PlanPreview from './PlanPreview'
+import TimelineReport from './TimelineReport'
 import { BarChart3, ArrowLeft } from 'lucide-react'
 
-export default function PlannerApp({ onBack, onShowTimeline }) {
+export default function PlannerApp({ onBack, onShowDashboard }) {
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('inceptai_messages')
     return saved ? JSON.parse(saved) : [
@@ -15,6 +16,7 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
     return saved ? JSON.parse(saved) : null
   })
   const [showPreview, setShowPreview] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
@@ -76,6 +78,18 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
       // Update plan preview immediately
       setProjectPlan(plan)
       setShowPreview(true)
+
+      // Save to all projects list
+      if (!isModification) {
+        const allProjects = JSON.parse(localStorage.getItem('inceptai_all_projects') || '[]')
+        const newProject = {
+          id: Date.now(),
+          plan: plan,
+          createdAt: new Date().toISOString()
+        }
+        allProjects.push(newProject)
+        localStorage.setItem('inceptai_all_projects', JSON.stringify(allProjects))
+      }
       
       if (isModification && oldDuration) {
         // Show detailed changes
@@ -186,9 +200,11 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
   }
 
   const handleGenerateTimeline = () => {
-    if (projectPlan) {
-      onShowTimeline(projectPlan)
-    }
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
   }
 
   const handleEditPlan = (updatedPlan) => {
@@ -206,6 +222,7 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
       setMessages([{ role: 'assistant', content: 'Describe your project — goals, timeline, and what needs to be done.' }])
       setProjectPlan(null)
       setShowPreview(false)
+      setShowModal(false)
       localStorage.removeItem('inceptai_messages')
       localStorage.removeItem('inceptai_project_plan')
     }
@@ -234,12 +251,21 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleNewProject}
-              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 hover:shadow-lg rounded-lg transition-all"
-            >
-              New Project
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onShowDashboard}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-md rounded-lg transition-all flex items-center gap-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Dashboard
+              </button>
+              <button
+                onClick={handleNewProject}
+                className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 hover:shadow-lg rounded-lg transition-all"
+              >
+                New Project
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -288,6 +314,12 @@ export default function PlannerApp({ onBack, onShowTimeline }) {
         </div>
       </main>
 
+      {showModal && projectPlan && (
+        <TimelineReport 
+          plan={projectPlan}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   )
 }

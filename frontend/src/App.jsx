@@ -1,26 +1,23 @@
 import { useState } from 'react'
 import LandingPage from './components/LandingPage'
 import PlannerApp from './components/PlannerApp'
-import TimelineReport from './components/TimelineReport'
+import ProjectDashboard from './components/ProjectDashboard'
 
 function App() {
-  const [currentView, setCurrentView] = useState('landing') // 'landing', 'planner', 'timeline'
-  const [timelinePlan, setTimelinePlan] = useState(null)
-
-  const handleShowTimeline = (plan) => {
-    setTimelinePlan(plan)
-    setCurrentView('timeline')
-  }
-
-  if (currentView === 'timeline' && timelinePlan) {
-    return <TimelineReport plan={timelinePlan} onBack={() => setCurrentView('planner')} />
-  }
+  const [currentView, setCurrentView] = useState('landing') // 'landing', 'dashboard', 'planner'
 
   if (currentView === 'planner') {
-    return <PlannerApp onBack={() => setCurrentView('landing')} onShowTimeline={handleShowTimeline} />
+    return <PlannerApp 
+      onBack={() => setCurrentView('dashboard')} 
+      onShowDashboard={() => setCurrentView('dashboard')}
+    />
   }
 
-  return <LandingPage onGetStarted={() => setCurrentView('planner')} />
+  if (currentView === 'dashboard') {
+    return <ProjectDashboard onCreateNew={() => setCurrentView('planner')} />
+  }
+
+  return <LandingPage onGetStarted={() => setCurrentView('dashboard')} />
 }
 
 export default App
