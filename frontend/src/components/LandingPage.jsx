@@ -41,7 +41,7 @@ export default function LandingPage({ onGetStarted }) {
             </h1>
             <p className="text-xl text-gray-600 mb-10 leading-relaxed animate-slide-up-delay-2">
               Incept AI converts your project descriptions into detailed timelines with tasks, 
-              dependencies, and resource allocation—in seconds.
+              dependencies, and resource allocation in seconds.
             </p>
             <div className="animate-slide-up-delay-3">
               <button 
