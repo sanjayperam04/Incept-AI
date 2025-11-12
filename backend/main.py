@@ -18,7 +18,7 @@ app.add_middleware(
     allow_origins=[
         "https://inceptai.vercel.app",  # Production
         "http://localhost:3000",         # Configured port
-        "http://localhost:3003",         # Your actual port 
+        "http://localhost:3003",         
     ],
     allow_credentials=True,
     allow_methods=["*"],
