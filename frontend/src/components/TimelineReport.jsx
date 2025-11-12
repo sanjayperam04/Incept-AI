@@ -1,10 +1,21 @@
-import { ArrowLeft, Download, Calendar, User, Clock, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, User, Clock, BarChart3, CheckCircle2, Circle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import jsPDF from 'jspdf'
 
-export default function TimelineReport({ plan, onClose }) {
+export default function TimelineReport({ plan, onClose, onTaskToggle }) {
   if (!plan || !plan.tasks) {
     return null
+  }
+
+  // Calculate progress
+  const completedTasks = plan.tasks.filter(t => t.completed).length
+  const totalTasks = plan.tasks.length
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+  const handleTaskToggle = (taskId) => {
+    if (onTaskToggle) {
+      onTaskToggle(taskId)
+    }
   }
 
   // Black and white theme - all tasks use black
@@ -766,67 +777,125 @@ export default function TimelineReport({ plan, onClose }) {
 
         {/* Task Details */}
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Detailed Task Breakdown
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-900">
+              Detailed Task Breakdown
+            </h2>
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">{completedTasks}</span> of <span className="font-semibold">{totalTasks}</span> tasks completed ({progressPercentage}%)
+            </div>
+          </div>
+          
+          {/* Overall Progress Bar */}
+          <div className="mb-6 bg-gray-100 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-gray-700">Overall Progress</span>
+              <span className="text-sm font-bold text-gray-900">{progressPercentage}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+
           <div className="space-y-3">
-            {plan.tasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-5 break-inside-avoid hover:shadow-md transition-all hover:border-gray-300"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center text-base font-bold flex-shrink-0">
-                      {task.id}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-base mb-3">{task.name}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
-                          <div className="w-7 h-7 bg-blue-50 rounded flex items-center justify-center flex-shrink-0">
-                            <User className="w-3.5 h-3.5 text-blue-600" />
+            {plan.tasks.map((task) => {
+              const taskProgress = task.completed ? 100 : 0
+              return (
+                <div
+                  key={task.id}
+                  className={`rounded-lg p-5 break-inside-avoid hover:shadow-md transition-all ${
+                    task.completed ? 'bg-green-50 border-2 border-green-300' : 'bg-gray-50 border border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => handleTaskToggle(task.id)}
+                        className="flex-shrink-0 mt-1 print:hidden"
+                        title={task.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                      >
+                        {task.completed ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        ) : (
+                          <Circle className="w-6 h-6 text-gray-400 hover:text-green-500 transition-colors" />
+                        )}
+                      </button>
+                      
+                      <div className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center text-base font-bold flex-shrink-0">
+                        {task.id}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className={`font-bold text-base mb-3 ${task.completed ? 'text-gray-600 line-through' : 'text-gray-900'}`}>
+                          {task.name}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mb-3">
+                          <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                            <div className="w-7 h-7 bg-blue-50 rounded flex items-center justify-center flex-shrink-0">
+                              <User className="w-3.5 h-3.5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Owner</p>
+                              <p className="font-semibold text-gray-900 text-xs">{task.owner}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Owner</p>
-                            <p className="font-semibold text-gray-900 text-xs">{task.owner}</p>
+                          <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                            <div className="w-7 h-7 bg-green-50 rounded flex items-center justify-center flex-shrink-0">
+                              <Calendar className="w-3.5 h-3.5 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Start Day</p>
+                              <p className="font-semibold text-gray-900 text-xs">Day {task.start_day}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
+                            <div className="w-7 h-7 bg-purple-50 rounded flex items-center justify-center flex-shrink-0">
+                              <Clock className="w-3.5 h-3.5 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Duration</p>
+                              <p className="font-semibold text-gray-900 text-xs">{task.duration} days</p>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
-                          <div className="w-7 h-7 bg-green-50 rounded flex items-center justify-center flex-shrink-0">
-                            <Calendar className="w-3.5 h-3.5 text-green-600" />
+                        
+                        {/* Task Progress Bar */}
+                        <div className="mt-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-medium text-gray-600">Task Progress</span>
+                            <span className="text-xs font-bold text-gray-900">{taskProgress}%</span>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Start Day</p>
-                            <p className="font-semibold text-gray-900 text-xs">Day {task.start_day}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-700 bg-white rounded-lg p-2.5 border border-gray-200">
-                          <div className="w-7 h-7 bg-purple-50 rounded flex items-center justify-center flex-shrink-0">
-                            <Clock className="w-3.5 h-3.5 text-purple-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Duration</p>
-                            <p className="font-semibold text-gray-900 text-xs">{task.duration} days</p>
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                task.completed ? 'bg-green-500' : 'bg-gray-300'
+                              }`}
+                              style={{ width: `${taskProgress}%` }}
+                            />
                           </div>
                         </div>
                       </div>
                     </div>
+                    <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
+                      task.completed ? 'bg-green-100 text-green-700' : 'bg-black text-white'
+                    }`}>
+                      {task.completed ? '✓ Complete' : `Task ${task.id}`}
+                    </span>
                   </div>
-                  <span className="bg-black text-white px-2.5 py-1 rounded text-xs font-semibold">
-                    Task {task.id}
-                  </span>
-                </div>
 
-                {task.dependencies && task.dependencies.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs text-gray-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
-                      <span className="font-semibold text-amber-900">Dependencies:</span> <span className="text-gray-700">Task {task.dependencies.join(', Task ')}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  {task.dependencies && task.dependencies.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs text-gray-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
+                        <span className="font-semibold text-amber-900">Dependencies:</span> <span className="text-gray-700">Task {task.dependencies.join(', Task ')}</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 

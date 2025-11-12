@@ -52,6 +52,33 @@ export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLan
     setUserItem('all_projects', JSON.stringify(updatedProjects))
   }
 
+  const handleTaskToggle = (taskId) => {
+    if (!selectedProject) return
+    
+    const updatedProjects = projects.map(p => {
+      if (p.id === selectedProject.id) {
+        const updatedTasks = p.plan.tasks.map(t => 
+          t.id === taskId ? { ...t, completed: !t.completed } : t
+        )
+        return {
+          ...p,
+          plan: {
+            ...p.plan,
+            tasks: updatedTasks
+          }
+        }
+      }
+      return p
+    })
+    
+    setProjects(updatedProjects)
+    setUserItem('all_projects', JSON.stringify(updatedProjects))
+    
+    // Update selected project to reflect changes
+    const updatedSelectedProject = updatedProjects.find(p => p.id === selectedProject.id)
+    setSelectedProject(updatedSelectedProject)
+  }
+
   const handleClearAllData = () => {
     const userId = getCurrentUserId()
     if (confirm(`Are you sure you want to clear ALL your data?\n\nThis will delete all projects and cannot be undone.\n\nYour User ID: ${userId?.substring(0, 8)}...`)) {
@@ -162,6 +189,31 @@ export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLan
                     </div>
                   </div>
 
+                  {/* Progress Bar */}
+                  {(() => {
+                    const completedTasks = project.plan.tasks.filter(t => t.completed).length
+                    const totalTasks = project.plan.tasks.length
+                    const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+                    
+                    return (
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-medium text-gray-600">Progress</span>
+                          <span className="text-xs font-bold text-gray-900">{progressPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                          <div 
+                            className="bg-green-500 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {completedTasks} of {totalTasks} tasks completed
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {/* Created Date with Action Icons */}
                   <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
                     <p className="text-xs text-gray-500">
@@ -215,6 +267,7 @@ export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLan
           plan={selectedProject.plan}
           onClose={handleCloseModal}
           onGoHome={onShowLanding}
+          onTaskToggle={handleTaskToggle}
         />
       )}
     </div>
