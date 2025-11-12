@@ -167,11 +167,30 @@ export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLan
                   }`}
                 >
                   {/* Project Name */}
-                  <h3 className={`text-lg font-bold mb-4 ${
-                    project.completed ? 'text-gray-500 line-through' : 'text-gray-900'
-                  }`}>
-                    {project.plan.project_name}
-                  </h3>
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className={`text-lg font-bold ${
+                        project.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                      }`}>
+                        {project.plan.project_name}
+                      </h3>
+                      {(() => {
+                        const completedTasks = project.plan.tasks.filter(t => t.completed).length
+                        const totalTasks = project.plan.tasks.length
+                        const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+                        
+                        if (progressPercentage === 100) {
+                          return (
+                            <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Project Completed
+                            </span>
+                          )
+                        }
+                        return null
+                      })()}
+                    </div>
+                  </div>
 
                   {/* Project Stats */}
                   <div className="space-y-2 mb-4">
@@ -238,17 +257,29 @@ export default function ProjectDashboard({ onCreateNew, onEditProject, onShowLan
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={(e) => handleToggleComplete(project.id, e)}
-                        className={`p-1.5 rounded transition-colors ${
-                          project.completed 
-                            ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                        }`}
-                        title={project.completed ? 'Mark as Incomplete' : 'Mark as Completed'}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
+                      {(() => {
+                        const completedTasks = project.plan.tasks.filter(t => t.completed).length
+                        const totalTasks = project.plan.tasks.length
+                        const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+                        
+                        // Only show the button if progress is not 100%
+                        if (progressPercentage < 100) {
+                          return (
+                            <button
+                              onClick={(e) => handleToggleComplete(project.id, e)}
+                              className={`p-1.5 rounded transition-colors ${
+                                project.completed 
+                                  ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                                  : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                              }`}
+                              title={project.completed ? 'Mark as Incomplete' : 'Mark as Completed'}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                          )
+                        }
+                        return null
+                      })()}
                     </div>
                   </div>
 
