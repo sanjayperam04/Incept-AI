@@ -15,7 +15,10 @@ app = FastAPI(title="Project Planner API")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+    "https://inceptai.vercel.app",  # Production frontend URL
+    "http://localhost:3003",         # Local frontend URL (for development)
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
